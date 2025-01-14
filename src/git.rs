@@ -4,7 +4,14 @@ use orfail::OrFail;
 
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
-    pub pattern: Option<String>,
+    pub pattern: String,
+}
+
+impl GrepOptions {
+    pub fn command_string(&self) -> String {
+        // TODO
+        format!("$ git grep {}", self.pattern)
+    }
 }
 
 pub fn is_available() -> bool {

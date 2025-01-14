@@ -53,6 +53,7 @@ impl App {
         }
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 
+        self.state.dirty = false;
         Ok(())
     }
 
@@ -84,14 +85,20 @@ impl App {
                 if let Some(widget) = self.widgets.last_mut() {
                     if !widget.handle_key_event(&mut self.state, event).or_fail()? {
                         self.widgets.pop();
+                        self.state.dirty = true;
                     }
                     if let Some(widget) = self.state.new_widget.take() {
                         self.widgets.push(widget);
+                        self.state.dirty = true;
                     }
                 }
-                self.render().or_fail()?;
             }
         }
+
+        if self.state.dirty {
+            self.render().or_fail()?;
+        }
+
         Ok(())
     }
 }
@@ -100,6 +107,7 @@ impl App {
 pub struct AppState {
     grep: GrepOptions,
     new_widget: Option<Box<dyn 'static + Widget>>,
+    dirty: bool,
 }
 
 pub trait Widget: std::fmt::Debug {
@@ -112,7 +120,8 @@ pub trait Widget: std::fmt::Debug {
 pub struct MainWidget;
 
 impl Widget for MainWidget {
-    fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+    fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+        canvas.drawl(Token::new(state.grep.command_string()));
         canvas.drawl(Token::new("Hello World!"));
         Ok(())
     }
@@ -145,10 +154,18 @@ impl Widget for SearchPatternInputWidget {
         Ok(())
     }
 
-    fn handle_key_event(&mut self, _state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+    fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
             KeyCode::Enter => {
                 return Ok(false);
+            }
+            KeyCode::Char(c) if !c.is_control() => {
+                state.grep.pattern.push(c);
+                state.dirty = true;
+            }
+            KeyCode::Backspace => {
+                state.grep.pattern.pop();
+                state.dirty = true;
             }
             _ => {}
         }
