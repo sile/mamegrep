@@ -1,5 +1,6 @@
 use crate::{
     canvas::{Canvas, Token},
+    git::GrepOptions,
     terminal::Terminal,
 };
 
@@ -11,6 +12,8 @@ pub struct App {
     terminal: Terminal,
     exit: bool,
     frame_row_start: usize,
+    state: AppState,
+    widgets: Vec<Box<dyn 'static + Widget>>,
 }
 
 impl App {
@@ -20,6 +23,8 @@ impl App {
             terminal,
             exit: false,
             frame_row_start: 0,
+            state: AppState::default(),
+            widgets: vec![Box::new(MainWidget)],
         })
     }
 
@@ -40,7 +45,12 @@ impl App {
         }
 
         let mut canvas = Canvas::new(self.frame_row_start, self.terminal.size());
-        canvas.drawl(Token::new("Hello World!"));
+        for widget in &self.widgets {
+            widget.render(&self.state, &mut canvas).or_fail()?;
+        }
+        if let Some(widget) = self.widgets.last() {
+            widget.render_legend(&mut canvas).or_fail()?;
+        }
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 
         Ok(())
@@ -70,8 +80,78 @@ impl App {
             KeyCode::Char('c') if ctrl => {
                 self.exit = true;
             }
-            _ => {}
+            _ => {
+                if let Some(widget) = self.widgets.last_mut() {
+                    if !widget.handle_key_event(&mut self.state, event).or_fail()? {
+                        self.widgets.pop();
+                    }
+                    if let Some(widget) = self.state.new_widget.take() {
+                        self.widgets.push(widget);
+                    }
+                }
+                self.render().or_fail()?;
+            }
         }
         Ok(())
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct AppState {
+    grep: GrepOptions,
+    new_widget: Option<Box<dyn 'static + Widget>>,
+}
+
+pub trait Widget: std::fmt::Debug {
+    fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
+    fn render_legend(&self, canvas: &mut Canvas) -> orfail::Result<()>;
+    fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool>;
+}
+
+#[derive(Debug)]
+pub struct MainWidget;
+
+impl Widget for MainWidget {
+    fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+        canvas.drawl(Token::new("Hello World!"));
+        Ok(())
+    }
+
+    fn render_legend(&self, _canvas: &mut Canvas) -> orfail::Result<()> {
+        Ok(())
+    }
+
+    fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+        match event.code {
+            KeyCode::Char('/') => {
+                state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
+            }
+            _ => {}
+        }
+        Ok(true)
+    }
+}
+
+#[derive(Debug)]
+pub struct SearchPatternInputWidget {}
+
+impl Widget for SearchPatternInputWidget {
+    fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+        canvas.drawl(Token::new("Grep: "));
+        Ok(())
+    }
+
+    fn render_legend(&self, _canvas: &mut Canvas) -> orfail::Result<()> {
+        Ok(())
+    }
+
+    fn handle_key_event(&mut self, _state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+        match event.code {
+            KeyCode::Enter => {
+                return Ok(false);
+            }
+            _ => {}
+        }
+        Ok(true)
     }
 }

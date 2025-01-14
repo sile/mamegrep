@@ -2,6 +2,11 @@ use std::process::Command;
 
 use orfail::OrFail;
 
+#[derive(Debug, Default, Clone)]
+pub struct GrepOptions {
+    pub pattern: Option<String>,
+}
+
 pub fn is_available() -> bool {
     // Check if `git` is accessible and we are within a Git directory.
     call(&["rev-parse", "--is-inside-work-tree"])
