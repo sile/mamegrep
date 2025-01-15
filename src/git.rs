@@ -7,6 +7,7 @@ pub struct GrepOptions {
     pub pattern: String,
     pub before_context: usize,
     pub after_context: usize,
+    pub ignore_case: bool,
 }
 
 impl GrepOptions {
@@ -24,6 +25,9 @@ impl GrepOptions {
 
     fn build_grep_args(&self) -> Vec<String> {
         let mut args = vec!["grep".to_string(), "-n".to_string()];
+        if self.ignore_case {
+            args.last_mut().expect("infallible").push('i');
+        }
         if self.before_context > 0 {
             args.push("-B".to_string());
             args.push(self.before_context.to_string());

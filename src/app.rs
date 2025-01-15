@@ -168,6 +168,11 @@ impl Widget for MainWidget {
                 }
                 state.regrep().or_fail()?;
             }
+            KeyCode::Char('i') => {
+                state.grep.ignore_case = !state.grep.ignore_case;
+                state.regrep().or_fail()?;
+            }
+
             _ => {}
         }
         Ok(true)
