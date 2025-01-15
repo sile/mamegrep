@@ -36,6 +36,9 @@ impl App {
             self.handle_event(event).or_fail()?;
         }
 
+        std::mem::drop(self.terminal);
+        println!("{}", self.state.grep.command_string());
+
         Ok(())
     }
 
@@ -111,6 +114,14 @@ pub struct AppState {
     search_result: String,
 }
 
+impl AppState {
+    pub fn regrep(&mut self) -> orfail::Result<()> {
+        self.search_result = self.grep.call().or_fail()?;
+        self.dirty = true;
+        Ok(())
+    }
+}
+
 pub trait Widget: std::fmt::Debug {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
     fn render_legend(&self, canvas: &mut Canvas) -> orfail::Result<()>;
@@ -140,6 +151,22 @@ impl Widget for MainWidget {
         match event.code {
             KeyCode::Char('/') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
+            }
+            KeyCode::Char('a') => {
+                if state.grep.after_lines == 0 {
+                    state.grep.after_lines = 3;
+                } else {
+                    state.grep.after_lines = 0;
+                }
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('b') => {
+                if state.grep.before_lines == 0 {
+                    state.grep.before_lines = 3;
+                } else {
+                    state.grep.before_lines = 0;
+                }
+                state.regrep().or_fail()?;
             }
             _ => {}
         }
