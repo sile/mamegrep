@@ -153,18 +153,18 @@ impl Widget for MainWidget {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
             }
             KeyCode::Char('a') => {
-                if state.grep.after_lines == 0 {
-                    state.grep.after_lines = 3;
+                if state.grep.after_context == 0 {
+                    state.grep.after_context = 3;
                 } else {
-                    state.grep.after_lines = 0;
+                    state.grep.after_context = 0;
                 }
                 state.regrep().or_fail()?;
             }
             KeyCode::Char('b') => {
-                if state.grep.before_lines == 0 {
-                    state.grep.before_lines = 3;
+                if state.grep.before_context == 0 {
+                    state.grep.before_context = 3;
                 } else {
-                    state.grep.before_lines = 0;
+                    state.grep.before_context = 0;
                 }
                 state.regrep().or_fail()?;
             }

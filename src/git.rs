@@ -5,14 +5,14 @@ use orfail::OrFail;
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
-    pub before_lines: usize,
-    pub after_lines: usize,
+    pub before_context: usize,
+    pub after_context: usize,
 }
 
 impl GrepOptions {
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
-        format!("$ git grep {} | grep", self.build_grep_args().join(" "))
+        format!("$ git grep {}", self.build_grep_args().join(" "))
     }
 
     pub fn call(&self) -> orfail::Result<String> {
@@ -24,13 +24,13 @@ impl GrepOptions {
 
     fn build_grep_args(&self) -> Vec<String> {
         let mut args = vec!["grep".to_string(), "-n".to_string()];
-        if self.before_lines > 0 {
+        if self.before_context > 0 {
             args.push("-B".to_string());
-            args.push(self.before_lines.to_string());
+            args.push(self.before_context.to_string());
         }
-        if self.after_lines > 0 {
+        if self.after_context > 0 {
             args.push("-A".to_string());
-            args.push(self.after_lines.to_string());
+            args.push(self.after_context.to_string());
         }
         args.push(self.pattern.clone());
         args
