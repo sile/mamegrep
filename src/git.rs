@@ -12,7 +12,7 @@ pub struct GrepOptions {
 impl GrepOptions {
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
-        format!("$ git grep {}", self.build_grep_args().join(" "))
+        format!("$ git {}", self.build_grep_args().join(" "))
     }
 
     pub fn call(&self) -> orfail::Result<String> {
