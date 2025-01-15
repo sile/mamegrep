@@ -108,6 +108,7 @@ pub struct AppState {
     grep: GrepOptions,
     new_widget: Option<Box<dyn 'static + Widget>>,
     dirty: bool,
+    search_result: String,
 }
 
 pub trait Widget: std::fmt::Debug {
@@ -122,7 +123,12 @@ pub struct MainWidget;
 impl Widget for MainWidget {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
         canvas.drawl(Token::new(state.grep.command_string()));
-        canvas.drawl(Token::new("Hello World!"));
+        canvas.drawl(Token::new(
+            std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
+        ));
+        for line in state.search_result.lines() {
+            canvas.drawl(Token::new(line));
+        }
         Ok(())
     }
 
@@ -157,6 +163,8 @@ impl Widget for SearchPatternInputWidget {
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
             KeyCode::Enter => {
+                state.search_result = state.grep.call().or_fail()?;
+                state.dirty = true;
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {

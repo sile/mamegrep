@@ -10,7 +10,12 @@ pub struct GrepOptions {
 impl GrepOptions {
     pub fn command_string(&self) -> String {
         // TODO
-        format!("$ git grep {}", self.pattern)
+        format!("$ git grep -n {}", self.pattern)
+    }
+
+    pub fn call(&self) -> orfail::Result<String> {
+        // TODO: no-hit handling
+        call(&["grep", "-n", &self.pattern]).or_fail()
     }
 }
 
