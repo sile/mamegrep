@@ -9,23 +9,23 @@ pub struct GrepOptions {
     pub after_context: usize,
     pub ignore_case: bool,
     // TODO:
-    // --cached
     // --no-index
     // --untracked
-    // -w (--word-regex)
-    // -I (default?)
     // --no-recursive
+    // -w (--word-regex)
     // -E (--extended-regexp)
     // -F (--fixed-strings)
     // -P (--perl-regexp)
-    // --column (default? for highlight)
-    // -o (--only-matching for highlight?)
-    // --heading (default for parse?)
-    // -p (--show-function, optional for grouping)
     // -e, --and, --or, --not, (, )
     // --all-match
     // <rev>
     // -- <path> (for internal to expand the matched context)
+    //
+    // -p (--show-function, optional for grouping)
+    //
+    // --column (default? for highlight)
+    // -o (--only-matching for highlight?)
+    // --heading (default for parse?)
 }
 
 impl GrepOptions {
@@ -42,7 +42,7 @@ impl GrepOptions {
     }
 
     fn build_grep_args(&self) -> Vec<String> {
-        let mut args = vec!["grep".to_string(), "-n".to_string()];
+        let mut args = vec!["grep".to_string(), "-nI".to_string()];
         if self.ignore_case {
             args.last_mut().expect("infallible").push('i');
         }
