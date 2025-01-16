@@ -133,12 +133,12 @@ pub struct MainWidget;
 
 impl Widget for MainWidget {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
-        canvas.drawl(Token::new(state.grep.command_string()));
-        canvas.drawl(Token::new(
+        canvas.drawln(Token::new(state.grep.command_string()));
+        canvas.drawln(Token::new(
             std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
         ));
         for line in state.search_result.lines() {
-            canvas.drawl(Token::new(line));
+            canvas.drawln(Token::new(line));
         }
         Ok(())
     }
@@ -184,7 +184,7 @@ pub struct SearchPatternInputWidget {}
 
 impl Widget for SearchPatternInputWidget {
     fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
-        canvas.drawl(Token::new("Grep: "));
+        canvas.drawln(Token::new("Grep: "));
         Ok(())
     }
 
