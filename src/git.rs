@@ -8,6 +8,24 @@ pub struct GrepOptions {
     pub before_context: usize,
     pub after_context: usize,
     pub ignore_case: bool,
+    // TODO:
+    // --cached
+    // --no-index
+    // --untracked
+    // -w (--word-regex)
+    // -I (default?)
+    // --no-recursive
+    // -E (--extended-regexp)
+    // -F (--fixed-strings)
+    // -P (--perl-regexp)
+    // --column (default? for highlight)
+    // -o (--only-matching for highlight?)
+    // --heading (default for parse?)
+    // -p (--show-function, optional for grouping)
+    // -e, --and, --or, --not, (, )
+    // --all-match
+    // <rev>
+    // -- <path> (for internal to expand the matched context)
 }
 
 impl GrepOptions {
