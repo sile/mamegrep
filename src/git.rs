@@ -9,6 +9,15 @@ enum Mode {
     Highlight,
 }
 
+#[derive(Debug, Clone)]
+pub struct SearchResult {}
+
+impl SearchResult {
+    fn parse(s: &str) -> orfail::Result<Self> {
+        Ok(Self {})
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
@@ -40,7 +49,9 @@ impl GrepOptions {
         //let args = self.build_grep_args(Mode::Highlight);
         let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
-        call(&args).or_fail()
+        let output = call(&args).or_fail()?;
+        SearchResult::parse(&output).or_fail()?;
+        Ok(output)
     }
 
     fn build_grep_args(&self, mode: Mode) -> Vec<String> {
