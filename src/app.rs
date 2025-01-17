@@ -1,3 +1,5 @@
+use std::{num::NonZeroUsize, path::PathBuf};
+
 use crate::{
     canvas::{Canvas, Token},
     git::GrepOptions,
@@ -177,6 +179,15 @@ impl Widget for MainWidget {
         }
         Ok(true)
     }
+}
+
+#[derive(Debug)]
+pub struct Tree {}
+
+#[derive(Debug)]
+pub struct Cursor {
+    pub file: Option<PathBuf>,
+    pub line_number: Option<NonZeroUsize>,
 }
 
 #[derive(Debug)]

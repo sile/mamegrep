@@ -9,9 +9,10 @@ enum Mode {
     Highlight,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct SearchResult {
-    files: BTreeMap<PathBuf, Vec<MatchLine>>,
+    pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
+    // TODO: max_line_number
 }
 
 impl SearchResult {
