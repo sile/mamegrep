@@ -2,6 +2,13 @@ use std::process::Command;
 
 use orfail::OrFail;
 
+#[derive(Debug)]
+enum Mode {
+    External,
+    Parsing,
+    Highlight,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
@@ -20,31 +27,33 @@ pub struct GrepOptions {
     // --all-match
     // <rev>
     // -- <path> (for internal to expand the matched context)
-    //
-    // -p (--show-function, optional for grouping)
-    //
-    // --column (default? for highlight)
-    // -o (--only-matching for highlight?)
-    // --heading (default for parse?)
 }
 
 impl GrepOptions {
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
-        format!("$ git {}", self.build_grep_args().join(" "))
+        format!("$ git {}", self.build_grep_args(Mode::External).join(" "))
     }
 
     pub fn call(&self) -> orfail::Result<String> {
         // TODO: no-hit handling
-        let args = self.build_grep_args();
+        //let args = self.build_grep_args(Mode::Highlight);
+        let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
         call(&args).or_fail()
     }
 
-    fn build_grep_args(&self) -> Vec<String> {
+    fn build_grep_args(&self, mode: Mode) -> Vec<String> {
         let mut args = vec!["grep".to_string(), "-nI".to_string()];
         if self.ignore_case {
             args.last_mut().expect("infallible").push('i');
+        }
+        if matches!(mode, Mode::Parsing) {
+            args.push("--heading".to_string());
+        }
+        if matches!(mode, Mode::Highlight) {
+            args.push("-o".to_string());
+            args.push("--column".to_string());
         }
         if self.before_context > 0 {
             args.push("-B".to_string());
