@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Command};
 
 use orfail::OrFail;
 
@@ -10,11 +10,40 @@ enum Mode {
 }
 
 #[derive(Debug, Clone)]
-pub struct SearchResult {}
+pub struct SearchResult {
+    files: BTreeMap<PathBuf, Vec<MatchLine>>,
+}
 
 impl SearchResult {
     fn parse(s: &str) -> orfail::Result<Self> {
-        Ok(Self {})
+        let mut files = BTreeMap::<_, Vec<_>>::new();
+        let mut current = PathBuf::new();
+        for line in s.lines() {
+            if let Some(line) = MatchLine::parse(line) {
+                files.get_mut(&current).or_fail()?.push(line);
+            } else {
+                current = PathBuf::from(line);
+                files.insert(current.clone(), Vec::new());
+            }
+        }
+        Ok(Self { files })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MatchLine {
+    pub number: NonZeroUsize,
+    pub text: String,
+}
+
+impl MatchLine {
+    fn parse(line: &str) -> Option<Self> {
+        let i = line.find(':')?;
+        let number = line[..i].parse().ok()?;
+        Some(Self {
+            number,
+            text: line[i + 1..].to_owned(),
+        })
     }
 }
 
@@ -102,4 +131,39 @@ fn call(args: &[&str]) -> orfail::Result<String> {
     })?;
 
     String::from_utf8(output.stdout).or_fail()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_search_result() -> orfail::Result<()> {
+        let output = r#"src/canvas.rs
+315:        line.draw_token(2, Token::new("foo"));
+316:        assert_eq!(line.text(), "  foo");
+"#;
+        let result = SearchResult::parse(&output).or_fail()?;
+        assert_eq!(result.files.len(), 1);
+
+        let lines = result
+            .files
+            .get(&PathBuf::from("src/canvas.rs"))
+            .or_fail()?;
+        assert_eq!(lines.len(), 2);
+
+        assert_eq!(lines[0].number.get(), 315);
+        assert_eq!(
+            lines[0].text,
+            r#"        line.draw_token(2, Token::new("foo"));"#
+        );
+
+        assert_eq!(lines[1].number.get(), 316);
+        assert_eq!(
+            lines[1].text,
+            r#"        assert_eq!(line.text(), "  foo");"#
+        );
+
+        Ok(())
+    }
 }
