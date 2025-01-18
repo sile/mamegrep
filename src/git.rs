@@ -11,21 +11,24 @@ enum Mode {
 
 #[derive(Debug, Default, Clone)]
 pub struct Highlight {
-    pub lines: BTreeMap<(PathBuf, NonZeroUsize), Vec<MatchLineColumn>>,
+    pub lines: BTreeMap<PathBuf, BTreeMap<NonZeroUsize, Vec<MatchLineColumn>>>,
 }
 
 impl Highlight {
     fn parse(s: &str) -> orfail::Result<Self> {
-        let mut lines = BTreeMap::<_, Vec<_>>::new();
+        let mut lines = BTreeMap::<_, BTreeMap<_, Vec<_>>>::new();
         let mut current = PathBuf::new();
         for line in s.lines() {
             if let Some(m) = MatchLineColumn::parse(line) {
                 lines
-                    .entry((current.clone(), m.line_number))
+                    .get_mut(&current)
+                    .or_fail()?
+                    .entry(m.line_number)
                     .or_default()
                     .push(m);
             } else {
                 current = PathBuf::from(line);
+                lines.insert(current.clone(), BTreeMap::new());
             }
         }
         Ok(Self { lines })
@@ -36,11 +39,11 @@ impl Highlight {
 pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
     pub max_line_width: usize,
-    // TODO: highlight
+    pub highlight: Highlight,
 }
 
 impl SearchResult {
-    fn parse(s: &str) -> orfail::Result<Self> {
+    fn parse(s: &str, highlight: Highlight) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
         let mut max_line_width = 1;
@@ -56,6 +59,7 @@ impl SearchResult {
         Ok(Self {
             files,
             max_line_width,
+            highlight,
         })
     }
 }
@@ -91,7 +95,7 @@ impl MatchLineColumn {
 
         let line = &line[i + 1..];
         let i = line.find(':')?;
-        let column_offset = line[..i].parse().ok()?;
+        let column_offset = line[..i].parse::<usize>().ok()?.checked_sub(1)?;
         Some(Self {
             line_number,
             column_offset,
@@ -127,11 +131,17 @@ impl GrepOptions {
     }
 
     pub fn call(&self) -> orfail::Result<SearchResult> {
-        //let args = self.build_grep_args(Mode::Highlight);
+        // TODO: Execute in parallel.
+        let args = self.build_grep_args(Mode::Highlight);
+        let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+        let output = call(&args, false).or_fail()?;
+        let highlight = Highlight::parse(&output).or_fail()?;
+
         let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
-        SearchResult::parse(&output).or_fail()
+
+        SearchResult::parse(&output, highlight).or_fail()
     }
 
     fn build_grep_args(&self, mode: Mode) -> Vec<String> {
@@ -145,6 +155,7 @@ impl GrepOptions {
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());
             args.push("--column".to_string());
+            args.push("--heading".to_string());
         }
         if self.before_context > 0 {
             args.push("-B".to_string());
@@ -196,7 +207,7 @@ mod tests {
 315:        line.draw_token(2, Token::new("foo"));
 316:        assert_eq!(line.text(), "  foo");
 "#;
-        let result = SearchResult::parse(&output).or_fail()?;
+        let result = SearchResult::parse(&output, Highlight::default()).or_fail()?;
         assert_eq!(result.files.len(), 1);
 
         let lines = result
@@ -231,7 +242,7 @@ src/git.rs
 166:55:foo
 172:51:foo"#;
         let highlight = Highlight::parse(&output).or_fail()?;
-        assert_eq!(highlight.lines.len(), 6);
+        assert_eq!(highlight.lines.len(), 2);
 
         Ok(())
     }

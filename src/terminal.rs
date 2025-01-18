@@ -71,6 +71,7 @@ impl Terminal {
                     TokenStyle::Bold => Attributes::none().with(Attribute::Bold),
                     TokenStyle::Dim => Attributes::none().with(Attribute::Dim),
                     TokenStyle::Underlined => Attributes::none().with(Attribute::Underlined),
+                    TokenStyle::Reverse => Attributes::none().with(Attribute::Reverse),
                 };
                 let content = StyledContent::new(
                     ContentStyle {

@@ -176,6 +176,7 @@ pub enum TokenStyle {
     Bold,
     Dim,
     Underlined,
+    Reverse,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

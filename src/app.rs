@@ -1,7 +1,7 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
 use crate::{
-    canvas::{Canvas, Token, TokenStyle},
+    canvas::{Canvas, Token, TokenPosition, TokenStyle},
     git::{GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
 };
@@ -193,12 +193,18 @@ pub struct Tree {}
 impl Tree {
     fn render(&self, canvas: &mut Canvas, cursor: &Cursor, result: &SearchResult) {
         for (file, lines) in &result.files {
+            let hits = result
+                .highlight
+                .lines
+                .get(file)
+                .map(|v| v.values().map(|v| v.len()).sum::<usize>())
+                .unwrap_or_default();
             canvas.draw(Token::with_style(
                 format!("{}", file.display()),
                 TokenStyle::Underlined,
             ));
-            canvas.drawln(Token::new(format!(" ({} lines, TODO hits)", lines.len())));
-            self.render_lines(canvas, cursor, result, lines);
+            canvas.drawln(Token::new(format!(" ({} lines, {hits} hits)", lines.len())));
+            self.render_lines(canvas, cursor, result, file, lines);
         }
     }
 
@@ -207,16 +213,47 @@ impl Tree {
         canvas: &mut Canvas,
         _cursor: &Cursor,
         result: &SearchResult,
+        file: &PathBuf,
         lines: &[MatchLine],
     ) {
         for line in lines {
-            // TODO: highlight
-            canvas.drawln(Token::new(format!(
-                "  [{:>width$}]{}",
+            // TODO:
+            let matched_columns = result
+                .highlight
+                .lines
+                .get(file)
+                .and_then(|v| v.get(&line.number))
+                .map(|v| v.as_slice())
+                .unwrap_or(&[]);
+
+            canvas.draw(Token::new(format!(
+                "  [{:>width$}]",
                 line.number,
-                line.text,
                 width = result.max_line_width
             )));
+
+            let base = canvas.cursor();
+            canvas.draw(Token::new(format!("{}", line.text)));
+
+            for matched in matched_columns {
+                let s = line
+                    .text
+                    .chars()
+                    .skip(matched.column_offset)
+                    .take(matched.text_chars)
+                    .collect::<String>();
+                canvas.draw_at(
+                    TokenPosition {
+                        row: base.row,
+                        // TODO: Consider multi byte char
+                        col: base.col + matched.column_offset,
+                    },
+                    Token::with_style(s, TokenStyle::Reverse),
+                );
+            }
+            // TODO: optimize
+
+            canvas.newline();
         }
     }
 }
