@@ -10,6 +10,29 @@ enum Mode {
 }
 
 #[derive(Debug, Default, Clone)]
+pub struct Highlight {
+    pub lines: BTreeMap<(PathBuf, NonZeroUsize), Vec<MatchLineColumn>>,
+}
+
+impl Highlight {
+    fn parse(s: &str) -> orfail::Result<Self> {
+        let mut lines = BTreeMap::<_, Vec<_>>::new();
+        let mut current = PathBuf::new();
+        for line in s.lines() {
+            if let Some(m) = MatchLineColumn::parse(line) {
+                lines
+                    .entry((current.clone(), m.line_number))
+                    .or_default()
+                    .push(m);
+            } else {
+                current = PathBuf::from(line);
+            }
+        }
+        Ok(Self { lines })
+    }
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
     pub max_line_width: usize,
@@ -54,11 +77,34 @@ impl MatchLine {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct MatchLineColumn {
+    pub line_number: NonZeroUsize,
+    pub column_offset: usize,
+    pub text_chars: usize,
+}
+
+impl MatchLineColumn {
+    fn parse(line: &str) -> Option<Self> {
+        let i = line.find(':')?;
+        let line_number = line[..i].parse().ok()?;
+
+        let line = &line[i + 1..];
+        let i = line.find(':')?;
+        let column_offset = line[..i].parse().ok()?;
+        Some(Self {
+            line_number,
+            column_offset,
+            text_chars: line[i + 1..].chars().count(),
+        })
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
-    pub before_context: usize,
-    pub after_context: usize,
+    pub before_context: usize, // TODO: delete
+    pub after_context: usize,  // TODO: delete
     pub ignore_case: bool,
     // TODO:
     // --no-index
@@ -171,6 +217,20 @@ mod tests {
             lines[1].text,
             r#"        assert_eq!(line.text(), "  foo");"#
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_highlight() -> orfail::Result<()> {
+        let output = r#"src/canvas.rs
+315:40:foo
+316:36:foo
+src/git.rs
+151:44:foo
+152:40:foo
+166:55:foo
+172:51:foo"#;
 
         Ok(())
     }
