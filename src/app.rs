@@ -15,6 +15,7 @@ pub struct App {
     exit: bool,
     frame_row_start: usize,
     state: AppState,
+    // TODO: Add DetailedWidget (or MatchContextWidget)
     widgets: Vec<Box<dyn 'static + Widget>>,
 }
 
