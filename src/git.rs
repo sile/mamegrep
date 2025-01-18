@@ -12,22 +12,28 @@ enum Mode {
 #[derive(Debug, Default, Clone)]
 pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
-    // TODO: max_line_number
+    pub max_line_width: usize,
+    // TODO: highlight
 }
 
 impl SearchResult {
     fn parse(s: &str) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
+        let mut max_line_width = 1;
         for line in s.lines() {
             if let Some(line) = MatchLine::parse(line) {
+                max_line_width = max_line_width.max(line.number.to_string().len());
                 files.get_mut(&current).or_fail()?.push(line);
             } else {
                 current = PathBuf::from(line);
                 files.insert(current.clone(), Vec::new());
             }
         }
-        Ok(Self { files })
+        Ok(Self {
+            files,
+            max_line_width,
+        })
     }
 }
 
@@ -79,7 +85,7 @@ impl GrepOptions {
         //let args = self.build_grep_args(Mode::Highlight);
         let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
-        let output = call(&args).or_fail()?;
+        let output = call(&args, false).or_fail()?;
         SearchResult::parse(&output).or_fail()?;
         Ok(output)
     }
@@ -111,25 +117,27 @@ impl GrepOptions {
 
 pub fn is_available() -> bool {
     // Check if `git` is accessible and we are within a Git directory.
-    call(&["rev-parse", "--is-inside-work-tree"])
+    call(&["rev-parse", "--is-inside-work-tree"], true)
         .ok()
         .filter(|s| s.trim() == "true")
         .is_some()
 }
 
-fn call(args: &[&str]) -> orfail::Result<String> {
+fn call(args: &[&str], check_status: bool) -> orfail::Result<String> {
     let output = Command::new("git")
         .args(args)
         .output()
         .or_fail_with(|e| format!("Failed to execute `$ git {}`: {e}", args.join(" ")))?;
 
-    output.status.success().or_fail_with(|()| {
+    let error = |()| {
         format!(
             "Failed to execute `$ git {}`:\n{}\n",
             args.join(" "),
             String::from_utf8_lossy(&output.stderr)
         )
-    })?;
+    };
+    (!check_status || output.status.success()).or_fail_with(error)?;
+    (check_status || output.stderr.is_empty()).or_fail_with(error)?;
 
     String::from_utf8(output.stdout).or_fail()
 }
