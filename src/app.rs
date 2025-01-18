@@ -217,7 +217,7 @@ impl Tree {
         lines: &[MatchLine],
     ) {
         for line in lines {
-            // TODO:
+            // TODO: rename var
             let matched_columns = result
                 .highlight
                 .lines
@@ -235,18 +235,17 @@ impl Tree {
             let base = canvas.cursor();
             canvas.draw(Token::new(format!("{}", line.text)));
 
-            for matched in matched_columns {
-                let s = line
-                    .text
-                    .chars()
-                    .skip(matched.column_offset)
-                    .take(matched.text_chars)
-                    .collect::<String>();
+            let mut offset = 0;
+            for matched_text in matched_columns {
+                // TODO: Consider multi byte char
+                let i = offset + line.text[offset..].find(matched_text).expect("TODO");
+                let s = matched_text;
+                offset = i + matched_text.len();
                 canvas.draw_at(
                     TokenPosition {
                         row: base.row,
-                        // TODO: Consider multi byte char
-                        col: base.col + matched.column_offset,
+
+                        col: base.col + i,
                     },
                     Token::with_style(s, TokenStyle::Reverse),
                 );

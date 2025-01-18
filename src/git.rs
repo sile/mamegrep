@@ -11,7 +11,7 @@ enum Mode {
 
 #[derive(Debug, Default, Clone)]
 pub struct Highlight {
-    pub lines: BTreeMap<PathBuf, BTreeMap<NonZeroUsize, Vec<MatchLineColumn>>>,
+    pub lines: BTreeMap<PathBuf, BTreeMap<NonZeroUsize, Vec<String>>>,
 }
 
 impl Highlight {
@@ -19,13 +19,13 @@ impl Highlight {
         let mut lines = BTreeMap::<_, BTreeMap<_, Vec<_>>>::new();
         let mut current = PathBuf::new();
         for line in s.lines() {
-            if let Some(m) = MatchLineColumn::parse(line) {
+            if let Some(m) = MatchLine::parse(line) {
                 lines
                     .get_mut(&current)
                     .or_fail()?
-                    .entry(m.line_number)
+                    .entry(m.number)
                     .or_default()
-                    .push(m);
+                    .push(m.text);
             } else {
                 current = PathBuf::from(line);
                 lines.insert(current.clone(), BTreeMap::new());
@@ -81,29 +81,6 @@ impl MatchLine {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct MatchLineColumn {
-    pub line_number: NonZeroUsize,
-    pub column_offset: usize,
-    pub text_chars: usize,
-}
-
-impl MatchLineColumn {
-    fn parse(line: &str) -> Option<Self> {
-        let i = line.find(':')?;
-        let line_number = line[..i].parse().ok()?;
-
-        let line = &line[i + 1..];
-        let i = line.find(':')?;
-        let column_offset = line[..i].parse::<usize>().ok()?.checked_sub(1)?;
-        Some(Self {
-            line_number,
-            column_offset,
-            text_chars: line[i + 1..].chars().count(),
-        })
-    }
-}
-
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
@@ -154,7 +131,6 @@ impl GrepOptions {
         }
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());
-            args.push("--column".to_string());
             args.push("--heading".to_string());
         }
         if self.before_context > 0 {
