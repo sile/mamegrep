@@ -1,8 +1,8 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
 use crate::{
-    canvas::{Canvas, Token},
-    git::GrepOptions,
+    canvas::{Canvas, Token, TokenStyle},
+    git::{GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
 };
 
@@ -26,7 +26,10 @@ impl App {
             exit: false,
             frame_row_start: 0,
             state: AppState::default(),
-            widgets: vec![Box::new(MainWidget)],
+            widgets: vec![Box::new(MainWidget {
+                tree: Tree::default(),
+                cursor: Cursor::default(),
+            })],
         })
     }
 
@@ -113,7 +116,7 @@ pub struct AppState {
     grep: GrepOptions,
     new_widget: Option<Box<dyn 'static + Widget>>,
     dirty: bool,
-    search_result: String,
+    search_result: SearchResult,
 }
 
 impl AppState {
@@ -131,7 +134,10 @@ pub trait Widget: std::fmt::Debug {
 }
 
 #[derive(Debug)]
-pub struct MainWidget;
+pub struct MainWidget {
+    pub tree: Tree,
+    pub cursor: Cursor,
+}
 
 impl Widget for MainWidget {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
@@ -139,9 +145,9 @@ impl Widget for MainWidget {
         canvas.drawln(Token::new(
             std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
         ));
-        for line in state.search_result.lines() {
-            canvas.drawln(Token::new(line));
-        }
+
+        self.tree.render(canvas, &self.cursor, &state.search_result);
+
         Ok(())
     }
 
@@ -181,10 +187,41 @@ impl Widget for MainWidget {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Tree {}
 
-#[derive(Debug)]
+impl Tree {
+    fn render(&self, canvas: &mut Canvas, cursor: &Cursor, result: &SearchResult) {
+        for (file, lines) in &result.files {
+            canvas.draw(Token::with_style(
+                format!("{}", file.display()),
+                TokenStyle::Underlined,
+            ));
+            canvas.drawln(Token::new(format!(" ({} lines, TODO hits)", lines.len())));
+            self.render_lines(canvas, cursor, result, lines);
+        }
+    }
+
+    fn render_lines(
+        &self,
+        canvas: &mut Canvas,
+        _cursor: &Cursor,
+        result: &SearchResult,
+        lines: &[MatchLine],
+    ) {
+        for line in lines {
+            // TODO: highlight
+            canvas.drawln(Token::new(format!(
+                "  [{:>width$}]{}",
+                line.number,
+                line.text,
+                width = result.max_line_width
+            )));
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct Cursor {
     pub file: Option<PathBuf>,
     pub line_number: Option<NonZeroUsize>,

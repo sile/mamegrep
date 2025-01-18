@@ -80,14 +80,13 @@ impl GrepOptions {
         format!("$ git {}", self.build_grep_args(Mode::External).join(" "))
     }
 
-    pub fn call(&self) -> orfail::Result<String> {
+    pub fn call(&self) -> orfail::Result<SearchResult> {
         // TODO: no-hit handling
         //let args = self.build_grep_args(Mode::Highlight);
         let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
-        SearchResult::parse(&output).or_fail()?;
-        Ok(output)
+        SearchResult::parse(&output).or_fail()
     }
 
     fn build_grep_args(&self, mode: Mode) -> Vec<String> {
