@@ -103,8 +103,8 @@ impl MatchLineColumn {
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
-    pub before_context: usize, // TODO: delete
-    pub after_context: usize,  // TODO: delete
+    pub before_context: usize, // TODO: delete (used for detailed page)
+    pub after_context: usize,  // TODO: delete (ditto)
     pub ignore_case: bool,
     // TODO:
     // --no-index
@@ -127,7 +127,6 @@ impl GrepOptions {
     }
 
     pub fn call(&self) -> orfail::Result<SearchResult> {
-        // TODO: no-hit handling
         //let args = self.build_grep_args(Mode::Highlight);
         let args = self.build_grep_args(Mode::Parsing);
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
@@ -231,6 +230,8 @@ src/git.rs
 152:40:foo
 166:55:foo
 172:51:foo"#;
+        let highlight = Highlight::parse(&output).or_fail()?;
+        assert_eq!(highlight.lines.len(), 6);
 
         Ok(())
     }
