@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeSet,
     num::NonZeroUsize,
     ops::{RangeFrom, RangeTo},
     path::PathBuf,
@@ -122,6 +123,7 @@ pub struct AppState {
     dirty: bool,
     search_result: SearchResult,
     cursor: Cursor,
+    collapsed: BTreeSet<PathBuf>,
 }
 
 impl AppState {
@@ -130,6 +132,20 @@ impl AppState {
         self.dirty = true;
         self.reset_cursor();
         Ok(())
+    }
+
+    fn toggle_expansion(&mut self) {
+        if self.cursor.line_number.is_some() {
+            return;
+        }
+
+        let Some(file) = &self.cursor.file else {
+            return;
+        };
+        if !self.collapsed.remove(file) {
+            self.collapsed.insert(file.clone());
+        }
+        self.dirty = true;
     }
 
     fn cursor_up(&mut self) {
@@ -156,6 +172,10 @@ impl AppState {
             return;
         }
 
+        if self.cursor.line_number.is_some() {
+            todo!();
+        }
+
         let file = self.cursor.file.as_ref().expect("infallible");
         let new = self
             .search_result
@@ -173,6 +193,10 @@ impl AppState {
         if self.search_result.files.is_empty() {
             self.cursor = Cursor::default();
             return;
+        }
+
+        if self.cursor.line_number.is_some() {
+            todo!();
         }
 
         if let Some(f) = &self.cursor.file {
@@ -223,8 +247,7 @@ impl Widget for MainWidget {
             std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
         ));
 
-        self.tree
-            .render(canvas, &state.cursor, &state.search_result);
+        self.tree.render(canvas, state);
 
         Ok(())
     }
@@ -264,6 +287,9 @@ impl Widget for MainWidget {
             KeyCode::Down => {
                 state.cursor_down();
             }
+            KeyCode::Char('t') => {
+                state.toggle_expansion();
+            }
             _ => {}
         }
         Ok(true)
@@ -274,11 +300,12 @@ impl Widget for MainWidget {
 pub struct Tree {}
 
 impl Tree {
-    fn render(&self, canvas: &mut Canvas, cursor: &Cursor, result: &SearchResult) {
-        for (file, lines) in &result.files {
-            cursor.render_for_file(canvas, file);
+    fn render(&self, canvas: &mut Canvas, state: &AppState) {
+        for (file, lines) in &state.search_result.files {
+            state.cursor.render_for_file(canvas, file);
 
-            let hits = result
+            let hits = state
+                .search_result
                 .highlight
                 .lines
                 .get(file)
@@ -288,8 +315,14 @@ impl Tree {
                 format!("{}", file.display()),
                 TokenStyle::Underlined,
             ));
-            canvas.drawln(Token::new(format!(" ({} lines, {hits} hits)", lines.len())));
-            self.render_lines(canvas, cursor, result, file, lines);
+            canvas.draw(Token::new(format!(" ({} lines, {hits} hits)", lines.len())));
+
+            if state.collapsed.contains(file) {
+                canvas.drawln(Token::new("…"));
+            } else {
+                canvas.newline();
+                self.render_lines(canvas, &state.cursor, &state.search_result, file, lines);
+            }
         }
     }
 
