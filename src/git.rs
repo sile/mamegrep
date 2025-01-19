@@ -97,7 +97,6 @@ pub struct GrepOptions {
     // -P (--perl-regexp)
     // --and, --not
     // <rev>
-    // -- <path> (for internal to expand the matched context)
 }
 
 impl GrepOptions {
