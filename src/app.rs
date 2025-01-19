@@ -1,4 +1,8 @@
-use std::{num::NonZeroUsize, path::PathBuf};
+use std::{
+    num::NonZeroUsize,
+    ops::{RangeFrom, RangeTo},
+    path::PathBuf,
+};
 
 use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
@@ -29,7 +33,6 @@ impl App {
             state: AppState::default(),
             widgets: vec![Box::new(MainWidget {
                 tree: Tree::default(),
-                cursor: Cursor::default(),
             })],
         })
     }
@@ -118,13 +121,87 @@ pub struct AppState {
     new_widget: Option<Box<dyn 'static + Widget>>,
     dirty: bool,
     search_result: SearchResult,
+    cursor: Cursor,
 }
 
 impl AppState {
     pub fn regrep(&mut self) -> orfail::Result<()> {
         self.search_result = self.grep.call().or_fail()?;
         self.dirty = true;
+        self.reset_cursor();
         Ok(())
+    }
+
+    fn cursor_up(&mut self) {
+        if self.search_result.files.is_empty() {
+            return;
+        }
+
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let new = self
+            .search_result
+            .files
+            .range::<PathBuf, RangeTo<_>>(..file)
+            .rev()
+            .next()
+            .map(|(k, _)| k.clone());
+        if new.is_some() {
+            self.cursor.file = new;
+            self.dirty = true;
+        }
+    }
+
+    fn cursor_down(&mut self) {
+        if self.search_result.files.is_empty() {
+            return;
+        }
+
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let new = self
+            .search_result
+            .files
+            .range::<PathBuf, RangeFrom<_>>(file..)
+            .nth(1)
+            .map(|(k, _)| k.clone());
+        if new.is_some() {
+            self.cursor.file = new;
+            self.dirty = true;
+        }
+    }
+
+    fn reset_cursor(&mut self) {
+        if self.search_result.files.is_empty() {
+            self.cursor = Cursor::default();
+            return;
+        }
+
+        if let Some(f) = &self.cursor.file {
+            if !self.search_result.files.contains_key(f) {
+                self.cursor.line_number = None;
+                let new = self
+                    .search_result
+                    .files
+                    .range::<PathBuf, RangeTo<_>>(..f)
+                    .rev()
+                    .chain(self.search_result.files.range::<PathBuf, RangeFrom<_>>(f..))
+                    .next()
+                    .map(|(k, _)| k.clone());
+                self.cursor.file = new;
+            }
+        } else {
+            let new = self.search_result.files.keys().next().cloned();
+            self.cursor.file = new;
+        }
+
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let Some(line_number) = self.cursor.line_number else {
+            return;
+        };
+        let lines = self.search_result.files.get(file).expect("infallible");
+        if let Err(i) = lines.binary_search_by_key(&line_number, |x| x.number) {
+            let line = lines.get(i).unwrap_or(lines.last().expect("infallible"));
+            self.cursor.line_number = Some(line.number);
+        }
     }
 }
 
@@ -137,7 +214,6 @@ pub trait Widget: std::fmt::Debug {
 #[derive(Debug)]
 pub struct MainWidget {
     pub tree: Tree,
-    pub cursor: Cursor,
 }
 
 impl Widget for MainWidget {
@@ -147,7 +223,8 @@ impl Widget for MainWidget {
             std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
         ));
 
-        self.tree.render(canvas, &self.cursor, &state.search_result);
+        self.tree
+            .render(canvas, &state.cursor, &state.search_result);
 
         Ok(())
     }
@@ -181,7 +258,12 @@ impl Widget for MainWidget {
                 state.grep.ignore_case = !state.grep.ignore_case;
                 state.regrep().or_fail()?;
             }
-
+            KeyCode::Up => {
+                state.cursor_up();
+            }
+            KeyCode::Down => {
+                state.cursor_down();
+            }
             _ => {}
         }
         Ok(true)
@@ -194,6 +276,8 @@ pub struct Tree {}
 impl Tree {
     fn render(&self, canvas: &mut Canvas, cursor: &Cursor, result: &SearchResult) {
         for (file, lines) in &result.files {
+            cursor.render_for_file(canvas, file);
+
             let hits = result
                 .highlight
                 .lines
@@ -212,12 +296,14 @@ impl Tree {
     fn render_lines(
         &self,
         canvas: &mut Canvas,
-        _cursor: &Cursor,
+        cursor: &Cursor,
         result: &SearchResult,
         file: &PathBuf,
         lines: &[MatchLine],
     ) {
         for line in lines {
+            cursor.render_for_line(canvas, file, line.number);
+
             // TODO: rename var
             let matched_columns = result
                 .highlight
@@ -228,7 +314,7 @@ impl Tree {
                 .unwrap_or(&[]);
 
             canvas.draw(Token::new(format!(
-                "  [{:>width$}]",
+                "[{:>width$}]",
                 line.number,
                 width = result.max_line_width
             )));
@@ -264,6 +350,28 @@ pub struct Cursor {
     pub line_number: Option<NonZeroUsize>,
 }
 
+impl Cursor {
+    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
+        if self.line_number.is_some() {
+            return;
+        }
+
+        if self.file.as_ref() == Some(file) {
+            canvas.draw(Token::new("-> "));
+        } else {
+            canvas.draw(Token::new("   "));
+        }
+    }
+
+    pub fn render_for_line(&self, canvas: &mut Canvas, file: &PathBuf, line_number: NonZeroUsize) {
+        if self.file.as_ref() == Some(file) && self.line_number == Some(line_number) {
+            canvas.draw(Token::new("---> "));
+        } else {
+            canvas.draw(Token::new("     "));
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SearchPatternInputWidget {}
 
@@ -280,8 +388,7 @@ impl Widget for SearchPatternInputWidget {
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
             KeyCode::Enter => {
-                state.search_result = state.grep.call().or_fail()?;
-                state.dirty = true;
+                state.regrep().or_fail()?;
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {
