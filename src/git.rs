@@ -95,8 +95,7 @@ pub struct GrepOptions {
     // -E (--extended-regexp)
     // -F (--fixed-strings)
     // -P (--perl-regexp)
-    // -e, --and, --or, --not, (, )
-    // --all-match
+    // --and, --not
     // <rev>
     // -- <path> (for internal to expand the matched context)
 }
