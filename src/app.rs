@@ -153,6 +153,14 @@ impl AppState {
             return;
         }
 
+        if self.cursor.line_number.is_some() {
+            self.cursor_up_line();
+        } else {
+            self.cursor_up_file();
+        }
+    }
+
+    fn cursor_up_file(&mut self) {
         let file = self.cursor.file.as_ref().expect("infallible");
         let new = self
             .search_result
@@ -167,15 +175,71 @@ impl AppState {
         }
     }
 
+    fn cursor_up_line(&mut self) {
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let line_number = self.cursor.line_number.expect("infallible");
+
+        let lines = self.search_result.files.get(file).expect("infallible");
+
+        // TODO: optimize
+        for line in lines.iter().rev() {
+            if line_number > line.number {
+                self.cursor.line_number = Some(line.number);
+                self.dirty = true;
+                return;
+            }
+        }
+
+        let current = self.cursor.clone();
+        self.cursor_left();
+        self.cursor_up();
+        self.cursor_right();
+        if current.file == self.cursor.file {
+            self.cursor = current;
+        } else {
+            let file = self.cursor.file.as_ref().expect("infallible");
+            let lines = self.search_result.files.get(file).expect("infallible");
+            self.cursor.line_number = lines.last().map(|l| l.number);
+        }
+    }
+
     fn cursor_down(&mut self) {
         if self.search_result.files.is_empty() {
             return;
         }
 
         if self.cursor.line_number.is_some() {
-            todo!();
+            self.cursor_down_line();
+        } else {
+            self.cursor_down_file();
+        }
+    }
+
+    fn cursor_down_line(&mut self) {
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let line_number = self.cursor.line_number.expect("infallible");
+
+        let lines = self.search_result.files.get(file).expect("infallible");
+
+        // TODO: optimize
+        for line in lines {
+            if line_number < line.number {
+                self.cursor.line_number = Some(line.number);
+                self.dirty = true;
+                return;
+            }
         }
 
+        let current = self.cursor.clone();
+        self.cursor_left();
+        self.cursor_down();
+        self.cursor_right();
+        if current.file == self.cursor.file {
+            self.cursor = current;
+        }
+    }
+
+    fn cursor_down_file(&mut self) {
         let file = self.cursor.file.as_ref().expect("infallible");
         let new = self
             .search_result
@@ -399,7 +463,7 @@ impl Tree {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Cursor {
     pub file: Option<PathBuf>,
     pub line_number: Option<NonZeroUsize>,
