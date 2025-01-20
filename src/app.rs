@@ -189,6 +189,22 @@ impl AppState {
         }
     }
 
+    fn cursor_right(&mut self) {
+        if self.search_result.files.is_empty() | self.cursor.line_number.is_some() {
+            return;
+        }
+
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let line_number = self.search_result.files.get(file).expect("infallible")[0].number;
+        self.cursor.line_number = Some(line_number);
+        self.dirty = true;
+    }
+
+    fn cursor_left(&mut self) {
+        self.cursor.line_number = None;
+        self.dirty = true;
+    }
+
     fn reset_cursor(&mut self) {
         if self.search_result.files.is_empty() {
             self.cursor = Cursor::default();
@@ -286,6 +302,12 @@ impl Widget for MainWidget {
             }
             KeyCode::Down => {
                 state.cursor_down();
+            }
+            KeyCode::Right => {
+                state.cursor_right();
+            }
+            KeyCode::Left => {
+                state.cursor_left();
             }
             KeyCode::Char('t') => {
                 state.toggle_expansion();
@@ -386,10 +408,8 @@ pub struct Cursor {
 impl Cursor {
     pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
         if self.line_number.is_some() {
-            return;
-        }
-
-        if self.file.as_ref() == Some(file) {
+            canvas.draw(Token::new("   "));
+        } else if self.file.as_ref() == Some(file) {
             canvas.draw(Token::new("-> "));
         } else {
             canvas.draw(Token::new("   "));
