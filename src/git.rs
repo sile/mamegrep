@@ -19,6 +19,10 @@ impl Highlight {
         let mut lines = BTreeMap::<_, BTreeMap<_, Vec<_>>>::new();
         let mut current = PathBuf::new();
         for line in s.lines() {
+            if line == "--" {
+                continue;
+            }
+
             if let Some(m) = MatchLine::parse(line) {
                 lines
                     .get_mut(&current)
@@ -68,16 +72,34 @@ impl SearchResult {
 pub struct MatchLine {
     pub number: NonZeroUsize,
     pub text: String,
+    pub matched: bool,
 }
 
 impl MatchLine {
     fn parse(line: &str) -> Option<Self> {
-        let i = line.find(':')?;
-        let number = line[..i].parse().ok()?;
-        Some(Self {
-            number,
-            text: line[i + 1..].to_owned(),
-        })
+        for (i, c) in line.char_indices() {
+            match c {
+                ':' => {
+                    let number = line[..i].parse().ok()?;
+                    return Some(Self {
+                        number,
+                        text: line[i + 1..].to_owned(),
+                        matched: true,
+                    });
+                }
+                '-' => {
+                    let number = line[..i].parse().ok()?;
+                    return Some(Self {
+                        number,
+                        text: line[i + 1..].to_owned(),
+                        matched: false,
+                    });
+                }
+                '0'..='9' => {}
+                _ => return None,
+            }
+        }
+        None
     }
 }
 
