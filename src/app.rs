@@ -387,6 +387,21 @@ pub struct Tree {}
 
 impl Tree {
     fn render(&self, canvas: &mut Canvas, state: &AppState) {
+        canvas.drawln(Token::with_style(
+            format!(
+                "SEARCH RESULT ({} hits, {} files)",
+                state
+                    .search_result
+                    .highlight
+                    .lines
+                    .values()
+                    .map(|v| v.len())
+                    .sum::<usize>(),
+                state.search_result.files.len()
+            ),
+            TokenStyle::Bold,
+        ));
+
         for (file, lines) in &state.search_result.files {
             state.cursor.render_for_file(canvas, file);
 
