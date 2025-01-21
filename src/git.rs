@@ -19,10 +19,6 @@ impl Highlight {
         let mut lines = BTreeMap::<_, BTreeMap<_, Vec<_>>>::new();
         let mut current = PathBuf::new();
         for line in s.lines() {
-            if line == "--" {
-                continue;
-            }
-
             if let Some(m) = MatchLine::parse(line) {
                 lines
                     .get_mut(&current)
@@ -52,6 +48,10 @@ impl SearchResult {
         let mut current = PathBuf::new();
         let mut max_line_width = 1;
         for line in s.lines() {
+            if line == "--" {
+                continue;
+            }
+
             if let Some(line) = MatchLine::parse(line) {
                 max_line_width = max_line_width.max(line.number.to_string().len());
                 files.get_mut(&current).or_fail()?.push(line);
@@ -146,6 +146,8 @@ impl GrepOptions {
         }
         if matches!(mode, Mode::Parsing) {
             args.push("--heading".to_string());
+            args.push("-C".to_string());
+            args.push("3".to_string());
         }
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());

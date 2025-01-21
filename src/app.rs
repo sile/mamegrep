@@ -183,6 +183,10 @@ impl AppState {
 
         // TODO: optimize
         for line in lines.iter().rev() {
+            if !line.matched {
+                continue;
+            }
+
             if line_number > line.number {
                 self.cursor.line_number = Some(line.number);
                 self.dirty = true;
@@ -199,7 +203,7 @@ impl AppState {
         } else {
             let file = self.cursor.file.as_ref().expect("infallible");
             let lines = self.search_result.files.get(file).expect("infallible");
-            self.cursor.line_number = lines.last().map(|l| l.number);
+            self.cursor.line_number = lines.iter().rev().find(|l| l.matched).map(|l| l.number);
         }
     }
 
@@ -223,6 +227,10 @@ impl AppState {
 
         // TODO: optimize
         for line in lines {
+            if !line.matched {
+                continue;
+            }
+
             if line_number < line.number {
                 self.cursor.line_number = Some(line.number);
                 self.dirty = true;
@@ -259,7 +267,15 @@ impl AppState {
         }
 
         let file = self.cursor.file.as_ref().expect("infallible");
-        let line_number = self.search_result.files.get(file).expect("infallible")[0].number;
+        let line_number = self
+            .search_result
+            .files
+            .get(file)
+            .expect("infallible")
+            .iter()
+            .find(|l| l.matched)
+            .expect("infallible")
+            .number;
         self.cursor.line_number = Some(line_number);
         self.dirty = true;
     }
@@ -385,7 +401,10 @@ impl Tree {
                 format!("{}", file.display()),
                 TokenStyle::Underlined,
             ));
-            canvas.draw(Token::new(format!(" ({} lines, {hits} hits)", lines.len())));
+            canvas.draw(Token::new(format!(
+                " ({hits} hits, {} lines)",
+                lines.iter().filter(|l| l.matched).count()
+            )));
 
             if state.collapsed.contains(file) {
                 canvas.drawln(Token::new("…"));
@@ -405,6 +424,9 @@ impl Tree {
         lines: &[MatchLine],
     ) {
         for line in lines {
+            if !line.matched {
+                continue;
+            }
             cursor.render_for_line(canvas, file, line.number);
 
             // TODO: rename var
