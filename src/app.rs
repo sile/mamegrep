@@ -427,6 +427,27 @@ impl Tree {
             if !line.matched {
                 continue;
             }
+            let focused = cursor.is_line_focused(file, line.number);
+
+            if focused {
+                canvas.newline();
+
+                // TODO: optimize
+                for l in lines {
+                    if l.number == line.number {
+                        break;
+                    }
+                    if line.number.get() - l.number.get() < 3 {
+                        canvas.drawln(Token::new(format!(
+                            "      {:>width$}|{}",
+                            "",
+                            l.text,
+                            width = result.max_line_width,
+                        )));
+                    }
+                }
+            }
+
             cursor.render_for_line(canvas, file, line.number);
 
             // TODO: rename var
@@ -462,9 +483,27 @@ impl Tree {
                     Token::with_style(s, TokenStyle::Reverse),
                 );
             }
-            // TODO: optimize
-
             canvas.newline();
+
+            if focused {
+                // TODO: optimize
+                for l in lines {
+                    if l.number <= line.number {
+                        continue;
+                    }
+                    if l.number.get() - line.number.get() < 3 {
+                        canvas.drawln(Token::new(format!(
+                            "      {:>width$}|{}",
+                            "",
+                            l.text,
+                            width = result.max_line_width,
+                        )));
+                    } else {
+                        break;
+                    }
+                }
+                canvas.newline();
+            }
         }
     }
 }
@@ -487,11 +526,15 @@ impl Cursor {
     }
 
     pub fn render_for_line(&self, canvas: &mut Canvas, file: &PathBuf, line_number: NonZeroUsize) {
-        if self.file.as_ref() == Some(file) && self.line_number == Some(line_number) {
+        if self.is_line_focused(file, line_number) {
             canvas.draw(Token::new("---> "));
         } else {
             canvas.draw(Token::new("     "));
         }
+    }
+
+    pub fn is_line_focused(&self, file: &PathBuf, line_number: NonZeroUsize) -> bool {
+        self.file.as_ref() == Some(file) && self.line_number == Some(line_number)
     }
 }
 
