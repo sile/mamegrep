@@ -341,22 +341,6 @@ impl Widget for MainWidget {
             KeyCode::Char('/') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
             }
-            KeyCode::Char('a') => {
-                if state.grep.after_context == 0 {
-                    state.grep.after_context = 3;
-                } else {
-                    state.grep.after_context = 0;
-                }
-                state.regrep().or_fail()?;
-            }
-            KeyCode::Char('b') => {
-                if state.grep.before_context == 0 {
-                    state.grep.before_context = 3;
-                } else {
-                    state.grep.before_context = 0;
-                }
-                state.regrep().or_fail()?;
-            }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
                 state.regrep().or_fail()?;

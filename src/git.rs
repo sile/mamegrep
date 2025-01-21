@@ -84,8 +84,6 @@ impl MatchLine {
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
-    pub before_context: usize, // TODO: delete (used for detailed page)
-    pub after_context: usize,  // TODO: delete (ditto)
     pub ignore_case: bool,
     // TODO:
     // --no-index
@@ -130,14 +128,6 @@ impl GrepOptions {
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());
             args.push("--heading".to_string());
-        }
-        if self.before_context > 0 {
-            args.push("-B".to_string());
-            args.push(self.before_context.to_string());
-        }
-        if self.after_context > 0 {
-            args.push("-A".to_string());
-            args.push(self.after_context.to_string());
         }
         args.push(self.pattern.clone());
         args
