@@ -358,6 +358,7 @@ impl Widget for MainWidget {
         canvas.set_cursor(TokenPosition::row(2));
         canvas.set_col_offset(canvas.frame_size().cols - width);
 
+        canvas.drawln(Token::new("|= actions =========="));
         canvas.drawln(Token::new("| (q)uit    [ESC,C-c]"));
         canvas.drawln(Token::new("| (e)dit pattern  [/]"));
 
@@ -366,21 +367,27 @@ impl Widget for MainWidget {
         canvas.drawln(Token::new("| (T)oggle all       "));
 
         canvas.drawln(Token::new("|                    "));
+        canvas.drawln(Token::new("|= git grep options ="));
 
         if state.grep.ignore_case {
-            canvas.drawln(Token::new("| --no-(i)gnore-case "));
+            canvas.drawln(Token::new("|o --(i)gnore-case    "));
         } else {
-            canvas.drawln(Token::new("| --(i)gnore-case     "));
+            canvas.drawln(Token::new("|  --(i)gnore-case    "));
         }
         if state.grep.untracked {
-            canvas.drawln(Token::new("| --no-(u)ntracked    "));
+            canvas.drawln(Token::new("|o --(u)ntracked      "));
         } else {
-            canvas.drawln(Token::new("| --(u)ntracked       "));
+            canvas.drawln(Token::new("|  --(u)ntracked      "));
         }
         if state.grep.no_index {
-            canvas.drawln(Token::new("| --(I)ndex           "));
+            canvas.drawln(Token::new("|o --no-(I)ndex       "));
         } else {
-            canvas.drawln(Token::new("| --no-(I)ndex        "));
+            canvas.drawln(Token::new("|  --no-(I)ndex       "));
+        }
+        if state.grep.no_recursive {
+            canvas.drawln(Token::new("|o --no-(R)ecursive   "));
+        } else {
+            canvas.drawln(Token::new("|  --no-(R)ecursive   "));
         }
 
         canvas.drawln(Token::new("+-------(h)ide-------"));
@@ -403,6 +410,10 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('I') => {
                 state.grep.no_index = !state.grep.no_index;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('R') => {
+                state.grep.no_recursive = !state.grep.no_recursive;
                 state.regrep().or_fail()?;
             }
             KeyCode::Up => {
