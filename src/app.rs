@@ -62,7 +62,7 @@ impl App {
             widget.render(&self.state, &mut canvas).or_fail()?;
         }
         if let Some(widget) = self.widgets.last() {
-            widget.render_legend(&mut canvas).or_fail()?;
+            widget.render_legend(&self.state, &mut canvas).or_fail()?;
         }
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 
@@ -327,7 +327,7 @@ impl AppState {
 
 pub trait Widget: std::fmt::Debug {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
-    fn render_legend(&self, canvas: &mut Canvas) -> orfail::Result<()>;
+    fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool>;
 }
 
@@ -348,13 +348,36 @@ impl Widget for MainWidget {
         Ok(())
     }
 
-    fn render_legend(&self, _canvas: &mut Canvas) -> orfail::Result<()> {
+    fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+        // TODO: show / hide
+        let width = 20;
+        if canvas.frame_size().cols < width {
+            return Ok(());
+        }
+
+        canvas.set_cursor(TokenPosition::row(2));
+        canvas.set_col_offset(canvas.frame_size().cols - width);
+
+        canvas.drawln(Token::new("| (q)uit   [ESC,C-c]"));
+        canvas.drawln(Token::new("| (e)dit pattern [/]"));
+        if state.grep.ignore_case {
+            canvas.drawln(Token::new("| not (i)gnore case "));
+        } else {
+            canvas.drawln(Token::new("| (i)gnore case     "));
+        }
+
+        // TODO: conditional
+        canvas.drawln(Token::new("| (t)oggle          "));
+        canvas.drawln(Token::new("| (T)oggle all      "));
+
+        canvas.drawln(Token::new("+------(h)ide-------"));
+
         Ok(())
     }
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
-            KeyCode::Char('/') => {
+            KeyCode::Char('/') | KeyCode::Char('e') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
             }
             KeyCode::Char('i') => {
@@ -562,7 +585,7 @@ impl Widget for SearchPatternInputWidget {
         Ok(())
     }
 
-    fn render_legend(&self, _canvas: &mut Canvas) -> orfail::Result<()> {
+    fn render_legend(&self, state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
         Ok(())
     }
 
