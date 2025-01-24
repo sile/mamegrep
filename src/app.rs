@@ -377,6 +377,11 @@ impl Widget for MainWidget {
         } else {
             canvas.drawln(Token::new("| --(u)ntracked       "));
         }
+        if state.grep.no_index {
+            canvas.drawln(Token::new("| --(I)ndex           "));
+        } else {
+            canvas.drawln(Token::new("| --no-(I)ndex        "));
+        }
 
         canvas.drawln(Token::new("+-------(h)ide-------"));
 
@@ -394,6 +399,10 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('u') => {
                 state.grep.untracked = !state.grep.untracked;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('I') => {
+                state.grep.no_index = !state.grep.no_index;
                 state.regrep().or_fail()?;
             }
             KeyCode::Up => {

@@ -110,9 +110,8 @@ pub struct GrepOptions {
     pub pattern: String,
     pub ignore_case: bool,
     pub untracked: bool,
+    pub no_index: bool,
     // TODO:
-    // --no-index
-    // --untracked
     // --no-recursive
     // -w (--word-regex)
     // -E (--extended-regexp)
@@ -150,6 +149,9 @@ impl GrepOptions {
         }
         if self.untracked {
             args.push("--untracked".to_string());
+        }
+        if self.no_index {
+            args.push("--no-index".to_string());
         }
         if matches!(mode, Mode::Parsing) {
             args.push("--heading".to_string());
