@@ -109,6 +109,7 @@ impl MatchLine {
 pub struct GrepOptions {
     pub pattern: String,
     pub ignore_case: bool,
+    pub untracked: bool,
     // TODO:
     // --no-index
     // --untracked
@@ -146,6 +147,9 @@ impl GrepOptions {
         let mut args = vec!["grep".to_string(), "-nI".to_string()];
         if self.ignore_case {
             args.last_mut().expect("infallible").push('i');
+        }
+        if self.untracked {
+            args.push("--untracked".to_string());
         }
         if matches!(mode, Mode::Parsing) {
             args.push("--heading".to_string());

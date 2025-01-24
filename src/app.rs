@@ -350,7 +350,7 @@ impl Widget for MainWidget {
 
     fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
         // TODO: show / hide
-        let width = 20;
+        let width = 21;
         if canvas.frame_size().cols < width {
             return Ok(());
         }
@@ -358,19 +358,27 @@ impl Widget for MainWidget {
         canvas.set_cursor(TokenPosition::row(2));
         canvas.set_col_offset(canvas.frame_size().cols - width);
 
-        canvas.drawln(Token::new("| (q)uit   [ESC,C-c]"));
-        canvas.drawln(Token::new("| (e)dit pattern [/]"));
-        if state.grep.ignore_case {
-            canvas.drawln(Token::new("| not (i)gnore case "));
-        } else {
-            canvas.drawln(Token::new("| (i)gnore case     "));
-        }
+        canvas.drawln(Token::new("| (q)uit    [ESC,C-c]"));
+        canvas.drawln(Token::new("| (e)dit pattern  [/]"));
 
         // TODO: conditional
-        canvas.drawln(Token::new("| (t)oggle          "));
-        canvas.drawln(Token::new("| (T)oggle all      "));
+        canvas.drawln(Token::new("| (t)oggle           "));
+        canvas.drawln(Token::new("| (T)oggle all       "));
 
-        canvas.drawln(Token::new("+------(h)ide-------"));
+        canvas.drawln(Token::new("|                    "));
+
+        if state.grep.ignore_case {
+            canvas.drawln(Token::new("| --no-(i)gnore-case "));
+        } else {
+            canvas.drawln(Token::new("| --(i)gnore-case     "));
+        }
+        if state.grep.untracked {
+            canvas.drawln(Token::new("| --no-(u)ntracked    "));
+        } else {
+            canvas.drawln(Token::new("| --(u)ntracked       "));
+        }
+
+        canvas.drawln(Token::new("+-------(h)ide-------"));
 
         Ok(())
     }
@@ -382,6 +390,10 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('u') => {
+                state.grep.untracked = !state.grep.untracked;
                 state.regrep().or_fail()?;
             }
             KeyCode::Up => {
@@ -585,7 +597,7 @@ impl Widget for SearchPatternInputWidget {
         Ok(())
     }
 
-    fn render_legend(&self, state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
+    fn render_legend(&self, _state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
         Ok(())
     }
 
