@@ -350,7 +350,7 @@ impl Widget for MainWidget {
 
     fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
         // TODO: show / hide
-        let width = 21;
+        let width = 22;
         if canvas.frame_size().cols < width {
             return Ok(());
         }
@@ -358,16 +358,16 @@ impl Widget for MainWidget {
         canvas.set_cursor(TokenPosition::row(2));
         canvas.set_col_offset(canvas.frame_size().cols - width);
 
-        canvas.drawln(Token::new("|= actions =========="));
-        canvas.drawln(Token::new("| (q)uit    [ESC,C-c]"));
-        canvas.drawln(Token::new("| (e)dit pattern  [/]"));
+        canvas.drawln(Token::new("|= actions ==========="));
+        canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
+        canvas.drawln(Token::new("| (e)dit pattern   [/]"));
 
         // TODO: conditional
-        canvas.drawln(Token::new("| (t)oggle           "));
-        canvas.drawln(Token::new("| (T)oggle all       "));
+        canvas.drawln(Token::new("| (t)oggle            "));
+        canvas.drawln(Token::new("| (T)oggle all        "));
 
-        canvas.drawln(Token::new("|                    "));
-        canvas.drawln(Token::new("|= git grep options ="));
+        canvas.drawln(Token::new("|                     "));
+        canvas.drawln(Token::new("|= git grep options =="));
 
         if state.grep.ignore_case {
             canvas.drawln(Token::new("|o --(i)gnore-case    "));
@@ -389,8 +389,28 @@ impl Widget for MainWidget {
         } else {
             canvas.drawln(Token::new("|  --no-(R)ecursive   "));
         }
+        if state.grep.word_regexp {
+            canvas.drawln(Token::new("|o --(w)ord-regexp    "));
+        } else {
+            canvas.drawln(Token::new("|  --(w)ord-regexp    "));
+        }
+        if state.grep.fixed_strings {
+            canvas.drawln(Token::new("|o --(F)ixed-strings  "));
+        } else {
+            canvas.drawln(Token::new("|  --(F)ixed-strings  "));
+        }
+        if state.grep.extended_regexp {
+            canvas.drawln(Token::new("|o --(E)xtended-regexp"));
+        } else {
+            canvas.drawln(Token::new("|  --(E)xtended-regexp"));
+        }
+        if state.grep.perl_regexp {
+            canvas.drawln(Token::new("|o --(P)erl-regexp    "));
+        } else {
+            canvas.drawln(Token::new("|  --(P)erl-regexp    "));
+        }
 
-        canvas.drawln(Token::new("+-------(h)ide-------"));
+        canvas.drawln(Token::new("+-------(h)ide--------"));
 
         Ok(())
     }
@@ -414,6 +434,34 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('R') => {
                 state.grep.no_recursive = !state.grep.no_recursive;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('w') => {
+                state.grep.word_regexp = !state.grep.word_regexp;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('F') => {
+                state.grep.fixed_strings = !state.grep.fixed_strings;
+                if state.grep.fixed_strings {
+                    state.grep.extended_regexp = false;
+                    state.grep.perl_regexp = false;
+                }
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('E') => {
+                state.grep.extended_regexp = !state.grep.extended_regexp;
+                if state.grep.extended_regexp {
+                    state.grep.fixed_strings = false;
+                    state.grep.perl_regexp = false;
+                }
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('P') => {
+                state.grep.perl_regexp = !state.grep.perl_regexp;
+                if state.grep.perl_regexp {
+                    state.grep.fixed_strings = false;
+                    state.grep.extended_regexp = false;
+                }
                 state.regrep().or_fail()?;
             }
             KeyCode::Up => {

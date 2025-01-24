@@ -112,11 +112,11 @@ pub struct GrepOptions {
     pub untracked: bool,
     pub no_index: bool,
     pub no_recursive: bool,
+    pub word_regexp: bool,
+    pub extended_regexp: bool,
+    pub fixed_strings: bool,
+    pub perl_regexp: bool,
     // TODO:
-    // -w (--word-regex)
-    // -E (--extended-regexp)
-    // -F (--fixed-strings)
-    // -P (--perl-regexp)
     // --and, --not
     // <rev>
     // <path>
@@ -146,6 +146,18 @@ impl GrepOptions {
         let mut args = vec!["grep".to_string(), "-nI".to_string()];
         if self.ignore_case {
             args.last_mut().expect("infallible").push('i');
+        }
+        if self.word_regexp {
+            args.last_mut().expect("infallible").push('w');
+        }
+        if self.extended_regexp {
+            args.last_mut().expect("infallible").push('E');
+        }
+        if self.fixed_strings {
+            args.last_mut().expect("infallible").push('F');
+        }
+        if self.perl_regexp {
+            args.last_mut().expect("infallible").push('P');
         }
         if self.untracked {
             args.push("--untracked".to_string());
