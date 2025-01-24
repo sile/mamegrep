@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    git::{GrepOptions, MatchLine, SearchResult},
+    git::{GrepOptions, MatchLine, SearchResult, CONTEXT_LINES},
     terminal::Terminal,
 };
 
@@ -452,7 +452,7 @@ impl Tree {
                     if l.number == line.number {
                         break;
                     }
-                    if line.number.get() - l.number.get() < 3 {
+                    if line.number.get() - l.number.get() <= CONTEXT_LINES {
                         canvas.drawln(Token::new(format!(
                             "      {:>width$}|{}",
                             "",
@@ -506,7 +506,7 @@ impl Tree {
                     if l.number <= line.number {
                         continue;
                     }
-                    if l.number.get() - line.number.get() < 3 {
+                    if l.number.get() - line.number.get() <= CONTEXT_LINES {
                         canvas.drawln(Token::new(format!(
                             "      {:>width$}|{}",
                             "",

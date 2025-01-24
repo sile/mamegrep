@@ -2,6 +2,8 @@ use std::{collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Comm
 
 use orfail::OrFail;
 
+pub const CONTEXT_LINES: usize = 3;
+
 #[derive(Debug)]
 enum Mode {
     External,
@@ -148,7 +150,7 @@ impl GrepOptions {
         if matches!(mode, Mode::Parsing) {
             args.push("--heading".to_string());
             args.push("-C".to_string());
-            args.push("3".to_string());
+            args.push(CONTEXT_LINES.to_string());
         }
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());
