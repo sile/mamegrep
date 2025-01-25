@@ -397,6 +397,11 @@ impl Widget for MainWidget {
         } else {
             canvas.drawln(Token::new("|  --(i)gnore-case    "));
         }
+        if state.grep.cached {
+            canvas.drawln(Token::new("|o --(c)ached         "));
+        } else {
+            canvas.drawln(Token::new("|  --(c)ached         "));
+        }
         if state.grep.untracked {
             canvas.drawln(Token::new("|o --(u)ntracked      "));
         } else {
@@ -461,6 +466,10 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('c') => {
+                state.grep.cached = !state.grep.cached;
                 state.regrep().or_fail()?;
             }
             KeyCode::Char('u') => {
