@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Comm
 
 use orfail::OrFail;
 
-pub const CONTEXT_LINES: usize = 3;
+pub const CONTEXT_LINES: usize = 4;
 
 #[derive(Debug)]
 enum Mode {

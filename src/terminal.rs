@@ -7,12 +7,13 @@ use crossterm::{
 };
 use orfail::OrFail;
 
-use crate::canvas::{Frame, TokenStyle};
+use crate::canvas::{Frame, TokenPosition, TokenStyle};
 
 #[derive(Debug)]
 pub struct Terminal {
     size: TerminalSize,
     prev: Frame,
+    show_cursor: bool,
 }
 
 impl Terminal {
@@ -34,7 +35,29 @@ impl Terminal {
         Ok(Self {
             size,
             prev: Frame::new(size),
+            show_cursor: false,
         })
+    }
+
+    pub fn show_cursor(&mut self, position: TokenPosition) -> orfail::Result<()> {
+        if !self.show_cursor {
+            crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).or_fail()?;
+            self.show_cursor = true;
+        }
+        crossterm::execute!(
+            std::io::stdout(),
+            crossterm::cursor::MoveTo(position.col as u16, position.row as u16)
+        )
+        .or_fail()?;
+        Ok(())
+    }
+
+    pub fn hide_cursor(&mut self) -> orfail::Result<()> {
+        if self.show_cursor {
+            crossterm::execute!(std::io::stdout(), crossterm::cursor::Hide).or_fail()?;
+            self.show_cursor = false;
+        }
+        Ok(())
     }
 
     pub fn size(&self) -> TerminalSize {

@@ -20,7 +20,6 @@ pub struct App {
     exit: bool,
     frame_row_start: usize,
     state: AppState,
-    // TODO: Add DetailedWidget (or MatchContextWidget)
     widgets: Vec<Box<dyn 'static + Widget>>,
 }
 
@@ -104,6 +103,11 @@ impl App {
                         self.widgets.push(widget);
                         self.state.dirty = true;
                     }
+                    if let Some(position) = self.state.show_terminal_cursor {
+                        self.terminal.show_cursor(position).or_fail()?;
+                    } else {
+                        self.terminal.hide_cursor().or_fail()?;
+                    }
                 }
             }
         }
@@ -125,6 +129,7 @@ pub struct AppState {
     cursor: Cursor,
     collapsed: BTreeSet<PathBuf>,
     hide_legend: bool,
+    show_terminal_cursor: Option<TokenPosition>,
 }
 
 impl AppState {
@@ -677,7 +682,6 @@ pub struct SearchPatternInputWidget {}
 
 impl Widget for SearchPatternInputWidget {
     fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
-        canvas.drawln(Token::new("Grep: "));
         Ok(())
     }
 
@@ -686,9 +690,13 @@ impl Widget for SearchPatternInputWidget {
     }
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+        // TODO:
+        state.show_terminal_cursor = Some(TokenPosition::row(0));
+
         match event.code {
             KeyCode::Enter => {
                 state.regrep().or_fail()?;
+                state.show_terminal_cursor = None;
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {
