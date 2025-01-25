@@ -447,7 +447,10 @@ impl Widget for MainWidget {
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
             KeyCode::Char('/') | KeyCode::Char('e') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget {}));
+                state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
+            }
+            KeyCode::Char('p') => {
+                state.new_widget = Some(Box::new(SearchPatternInputWidget::Path));
             }
             KeyCode::Char('h') => {
                 state.hide_legend = !state.hide_legend;
@@ -678,10 +681,13 @@ impl Cursor {
 }
 
 #[derive(Debug)]
-pub struct SearchPatternInputWidget {}
+pub enum SearchPatternInputWidget {
+    Pattern,
+    Path,
+}
 
 impl Widget for SearchPatternInputWidget {
-    fn render(&self, _state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
+    fn render(&self, _state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
         Ok(())
     }
 
@@ -700,11 +706,25 @@ impl Widget for SearchPatternInputWidget {
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {
-                state.grep.pattern.push(c);
+                match self {
+                    Self::Pattern => {
+                        state.grep.pattern.push(c);
+                    }
+                    Self::Path => {
+                        state.grep.path.push(c);
+                    }
+                }
                 state.dirty = true;
             }
             KeyCode::Backspace => {
-                state.grep.pattern.pop();
+                match self {
+                    Self::Pattern => {
+                        state.grep.pattern.pop();
+                    }
+                    Self::Path => {
+                        state.grep.path.pop();
+                    }
+                }
                 state.dirty = true;
             }
             _ => {}

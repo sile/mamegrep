@@ -108,6 +108,7 @@ impl MatchLine {
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
+    pub path: String,
     pub ignore_case: bool,
     pub untracked: bool,
     pub no_index: bool,
@@ -119,7 +120,6 @@ pub struct GrepOptions {
     // TODO:
     // --and, --not
     // <rev>
-    // <path>
 }
 
 impl GrepOptions {
@@ -178,6 +178,10 @@ impl GrepOptions {
             args.push("--heading".to_string());
         }
         args.push(self.pattern.clone());
+        if !self.path.is_empty() {
+            args.push("--".to_string());
+            args.push(self.path.clone());
+        }
         args
     }
 }
