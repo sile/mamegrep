@@ -111,7 +111,6 @@ pub struct GrepOptions {
     pub revision: String,
     pub path: String,
     pub ignore_case: bool,
-    pub cached: bool,
     pub untracked: bool,
     pub no_index: bool,
     pub no_recursive: bool,
@@ -159,9 +158,6 @@ impl GrepOptions {
         }
         if self.perl_regexp {
             args.last_mut().expect("infallible").push('P');
-        }
-        if self.cached {
-            args.push("--cached".to_string());
         }
         if self.untracked {
             args.push("--untracked".to_string());
