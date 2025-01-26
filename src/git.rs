@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Comm
 
 use orfail::OrFail;
 
-pub const CONTEXT_LINES: usize = 4;
+pub const DEFAULT_CONTEXT_LINES: usize = 4;
 
 #[derive(Debug)]
 enum Mode {
@@ -42,10 +42,11 @@ pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
     pub max_line_width: usize,
     pub highlight: Highlight,
+    pub context_lines: usize,
 }
 
 impl SearchResult {
-    fn parse(s: &str, highlight: Highlight) -> orfail::Result<Self> {
+    fn parse(s: &str, highlight: Highlight, context_lines: usize) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
         let mut max_line_width = 1;
@@ -66,6 +67,7 @@ impl SearchResult {
             files,
             max_line_width,
             highlight,
+            context_lines,
         })
     }
 }
@@ -105,6 +107,15 @@ impl MatchLine {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ContextLines(pub usize);
+
+impl Default for ContextLines {
+    fn default() -> Self {
+        Self(DEFAULT_CONTEXT_LINES)
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
@@ -119,6 +130,7 @@ pub struct GrepOptions {
     pub extended_regexp: bool,
     pub fixed_strings: bool,
     pub perl_regexp: bool,
+    pub context_lines: ContextLines,
     // TODO:
     // --and
 }
@@ -140,7 +152,7 @@ impl GrepOptions {
         let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
 
-        SearchResult::parse(&output, highlight).or_fail()
+        SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
     }
 
     fn build_grep_args(&self, mode: Mode) -> Vec<String> {
@@ -169,10 +181,10 @@ impl GrepOptions {
         if self.no_recursive {
             args.push("--no-recursive".to_string());
         }
-        if matches!(mode, Mode::Parsing) {
+        if matches!(mode, Mode::Parsing) && self.context_lines.0 > 0 {
             args.push("--heading".to_string());
             args.push("-C".to_string());
-            args.push(CONTEXT_LINES.to_string());
+            args.push(self.context_lines.0.to_string());
         }
         if matches!(mode, Mode::Highlight) {
             args.push("-o".to_string());

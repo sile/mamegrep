@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    git::{GrepOptions, MatchLine, SearchResult, CONTEXT_LINES},
+    git::{GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
 };
 
@@ -380,6 +380,7 @@ impl Widget for MainWidget {
         canvas.drawln(Token::new("| (↓)            [C-n]"));
         canvas.drawln(Token::new("| (←)            [C-b]"));
         canvas.drawln(Token::new("| (→)            [C-f]"));
+        canvas.drawln(Token::new("| (+|-) context lines "));
 
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("|= git grep patterns ="));
@@ -494,6 +495,14 @@ impl Widget for MainWidget {
                 state.grep.perl_regexp = !state.grep.perl_regexp;
                 state.regrep().or_fail()?;
             }
+            KeyCode::Char('+') => {
+                state.grep.context_lines.0 += 1;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('-') if state.grep.context_lines.0 > 0 => {
+                state.grep.context_lines.0 -= 1;
+                state.regrep().or_fail()?;
+            }
             KeyCode::Up => {
                 state.cursor_up();
             }
@@ -585,7 +594,7 @@ impl Tree {
                     if l.number == line.number {
                         break;
                     }
-                    if line.number.get() - l.number.get() <= CONTEXT_LINES {
+                    if line.number.get() - l.number.get() <= result.context_lines {
                         canvas.drawln(Token::new(format!(
                             "      {:>width$}|{}",
                             "",
@@ -639,7 +648,7 @@ impl Tree {
                     if l.number <= line.number {
                         continue;
                     }
-                    if l.number.get() - line.number.get() <= CONTEXT_LINES {
+                    if l.number.get() - line.number.get() <= result.context_lines {
                         canvas.drawln(Token::new(format!(
                             "      {:>width$}|{}",
                             "",
