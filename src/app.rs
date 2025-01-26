@@ -449,6 +449,9 @@ impl Widget for MainWidget {
             KeyCode::Char('/') | KeyCode::Char('e') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
             }
+            KeyCode::Char('n') => {
+                state.new_widget = Some(Box::new(SearchPatternInputWidget::NotPattern));
+            }
             KeyCode::Char('r') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Revision));
             }
@@ -686,6 +689,7 @@ impl Cursor {
 #[derive(Debug)]
 pub enum SearchPatternInputWidget {
     Pattern,
+    NotPattern,
     Revision,
     Path,
 }
@@ -714,6 +718,9 @@ impl Widget for SearchPatternInputWidget {
                     Self::Pattern => {
                         state.grep.pattern.push(c);
                     }
+                    Self::NotPattern => {
+                        state.grep.not_pattern.push(c);
+                    }
                     Self::Revision => {
                         state.grep.revision.push(c);
                     }
@@ -727,6 +734,9 @@ impl Widget for SearchPatternInputWidget {
                 match self {
                     Self::Pattern => {
                         state.grep.pattern.pop();
+                    }
+                    Self::NotPattern => {
+                        state.grep.not_pattern.pop();
                     }
                     Self::Revision => {
                         state.grep.revision.pop();
