@@ -119,6 +119,7 @@ impl Default for ContextLines {
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
+    pub and_pattern: String,
     pub not_pattern: String,
     pub revision: String,
     pub path: String,
@@ -131,8 +132,6 @@ pub struct GrepOptions {
     pub fixed_strings: bool,
     pub perl_regexp: bool,
     pub context_lines: ContextLines,
-    // TODO:
-    // --and
 }
 
 impl GrepOptions {
@@ -191,11 +190,16 @@ impl GrepOptions {
             args.push("--heading".to_string());
         }
 
-        if !self.not_pattern.is_empty() {
+        if !self.not_pattern.is_empty() || !self.and_pattern.is_empty() {
             args.push("-e".to_string());
         }
         args.push(self.pattern.clone());
 
+        if !self.and_pattern.is_empty() {
+            args.push("--and".to_string());
+            args.push("-e".to_string());
+            args.push(self.and_pattern.clone());
+        }
         if !self.not_pattern.is_empty() {
             args.push("--and".to_string());
             args.push("--not".to_string());
