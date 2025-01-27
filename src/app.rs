@@ -154,6 +154,27 @@ impl AppState {
         self.dirty = true;
     }
 
+    fn toggle_all_expansion(&mut self) {
+        if self.cursor.line_number.is_some() {
+            todo!()
+        }
+
+        if self
+            .search_result
+            .files
+            .keys()
+            .all(|file| self.collapsed.contains(file))
+        {
+            self.collapsed.clear();
+        } else {
+            for file in self.search_result.files.keys() {
+                self.collapsed.insert(file.clone());
+            }
+        }
+
+        self.dirty = true;
+    }
+
     fn cursor_up(&mut self) {
         if self.search_result.files.is_empty() {
             return;
@@ -520,6 +541,9 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('t') => {
                 state.toggle_expansion();
+            }
+            KeyCode::Char('T') => {
+                state.toggle_all_expansion();
             }
             _ => {}
         }
