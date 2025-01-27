@@ -87,6 +87,9 @@ impl App {
 
         let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
         match event.code {
+            KeyCode::Char('q') if self.widgets.len() == 1 => {
+                self.exit = true;
+            }
             KeyCode::Esc => {
                 self.exit = true;
             }
@@ -742,7 +745,10 @@ impl Widget for SearchPatternInputWidget {
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         // TODO:
-        state.show_terminal_cursor = Some(TokenPosition::row(0));
+        if state.show_terminal_cursor.is_none() {
+            state.show_terminal_cursor = Some(TokenPosition::row(0));
+            state.dirty = true;
+        }
 
         match event.code {
             KeyCode::Enter => {
