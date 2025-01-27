@@ -87,7 +87,7 @@ impl App {
 
         let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
         match event.code {
-            KeyCode::Char('q') | KeyCode::Esc => {
+            KeyCode::Esc => {
                 self.exit = true;
             }
             KeyCode::Char('c') if ctrl => {
