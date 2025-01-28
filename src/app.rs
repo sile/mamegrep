@@ -9,6 +9,7 @@ use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
     git::{GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
+    widget_legend::WidgetLegend,
 };
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -21,6 +22,7 @@ pub struct App {
     frame_row_start: usize,
     state: AppState,
     widgets: Vec<Box<dyn 'static + Widget>>,
+    legend: WidgetLegend,
 }
 
 impl App {
@@ -34,6 +36,7 @@ impl App {
             widgets: vec![Box::new(MainWidget {
                 tree: Tree::default(),
             })],
+            legend: WidgetLegend::default(),
         })
     }
 
@@ -60,9 +63,7 @@ impl App {
         for widget in &self.widgets {
             widget.render(&self.state, &mut canvas).or_fail()?;
         }
-        if let Some(widget) = self.widgets.last() {
-            widget.render_legend(&self.state, &mut canvas).or_fail()?;
-        }
+        self.legend.render(&self.state, &mut canvas);
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 
         self.state.dirty = false;
@@ -96,6 +97,10 @@ impl App {
             KeyCode::Char('c') if ctrl => {
                 self.exit = true;
             }
+            KeyCode::Char('h') => {
+                self.legend.hide = !self.legend.hide;
+                self.state.dirty = true;
+            }
             _ => {
                 if let Some(widget) = self.widgets.last_mut() {
                     if !widget.handle_key_event(&mut self.state, event).or_fail()? {
@@ -125,14 +130,13 @@ impl App {
 
 #[derive(Debug, Default)]
 pub struct AppState {
-    grep: GrepOptions,
-    new_widget: Option<Box<dyn 'static + Widget>>,
-    dirty: bool,
-    search_result: SearchResult,
-    cursor: Cursor,
-    collapsed: BTreeSet<PathBuf>,
-    hide_legend: bool,
-    show_terminal_cursor: Option<TokenPosition>,
+    pub grep: GrepOptions,
+    pub new_widget: Option<Box<dyn 'static + Widget>>,
+    pub dirty: bool,
+    pub search_result: SearchResult,
+    pub cursor: Cursor,
+    pub collapsed: BTreeSet<PathBuf>,
+    pub show_terminal_cursor: Option<TokenPosition>,
 }
 
 impl AppState {
@@ -357,7 +361,6 @@ impl AppState {
 
 pub trait Widget: std::fmt::Debug {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
-    fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()>;
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool>;
 }
 
@@ -378,97 +381,6 @@ impl Widget for MainWidget {
         Ok(())
     }
 
-    fn render_legend(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
-        let width = 22;
-        if canvas.frame_size().cols < width {
-            return Ok(());
-        }
-
-        canvas.set_cursor(TokenPosition::row(2));
-        if state.hide_legend {
-            let col = canvas.frame_size().cols - 11;
-            canvas.set_col_offset(col);
-            canvas.drawln(Token::new("+- s(h)ow -"));
-            return Ok(());
-        }
-
-        canvas.set_col_offset(canvas.frame_size().cols - width);
-
-        canvas.drawln(Token::new("|= actions ==========="));
-        canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
-
-        // TODO: conditional
-        canvas.drawln(Token::new("| (t)oggle       [TAB]"));
-        canvas.drawln(Token::new("| (T)oggle all        "));
-        canvas.drawln(Token::new("| (↑)            [C-p]"));
-        canvas.drawln(Token::new("| (↓)            [C-n]"));
-        canvas.drawln(Token::new("| (←)            [C-b]"));
-        canvas.drawln(Token::new("| (→)            [C-f]"));
-        canvas.drawln(Token::new("| (+|-) context lines "));
-
-        canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("|= git grep patterns ="));
-        canvas.drawln(Token::new("| (e)dit pattern   [/]"));
-        canvas.drawln(Token::new("| edit (a)nd pattern  "));
-        canvas.drawln(Token::new("| edit (n)ot pattern  "));
-        canvas.drawln(Token::new("| edit (r)evision     "));
-        canvas.drawln(Token::new("| edit (p)ath         "));
-
-        canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("|= git grep flags ===="));
-
-        if state.grep.ignore_case {
-            canvas.drawln(Token::new("|o --(i)gnore-case    "));
-        } else {
-            canvas.drawln(Token::new("|  --(i)gnore-case    "));
-        }
-        if state.grep.untracked {
-            canvas.drawln(Token::new("|o --(u)ntracked      "));
-        } else {
-            canvas.drawln(Token::new("|  --(u)ntracked      "));
-        }
-        if state.grep.no_index {
-            canvas.drawln(Token::new("|o --no-(I)ndex       "));
-        } else {
-            canvas.drawln(Token::new("|  --no-(I)ndex       "));
-        }
-        if state.grep.no_recursive {
-            canvas.drawln(Token::new("|o --no-(R)ecursive   "));
-        } else {
-            canvas.drawln(Token::new("|  --no-(R)ecursive   "));
-        }
-        if state.grep.word_regexp {
-            canvas.drawln(Token::new("|o --(w)ord-regexp    "));
-        } else {
-            canvas.drawln(Token::new("|  --(w)ord-regexp    "));
-        }
-        if !(state.grep.extended_regexp || state.grep.perl_regexp) {
-            if state.grep.fixed_strings {
-                canvas.drawln(Token::new("|o --(F)ixed-strings  "));
-            } else {
-                canvas.drawln(Token::new("|  --(F)ixed-strings  "));
-            }
-        }
-        if !(state.grep.fixed_strings || state.grep.perl_regexp) {
-            if state.grep.extended_regexp {
-                canvas.drawln(Token::new("|o --(E)xtended-regexp"));
-            } else {
-                canvas.drawln(Token::new("|  --(E)xtended-regexp"));
-            }
-        }
-        if !(state.grep.fixed_strings || state.grep.extended_regexp) {
-            if state.grep.perl_regexp {
-                canvas.drawln(Token::new("|o --(P)erl-regexp    "));
-            } else {
-                canvas.drawln(Token::new("|  --(P)erl-regexp    "));
-            }
-        }
-
-        canvas.drawln(Token::new("+-------(h)ide--------"));
-
-        Ok(())
-    }
-
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
             KeyCode::Char('/') | KeyCode::Char('e') => {
@@ -485,10 +397,6 @@ impl Widget for MainWidget {
             }
             KeyCode::Char('p') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Path));
-            }
-            KeyCode::Char('h') => {
-                state.hide_legend = !state.hide_legend;
-                state.regrep().or_fail()?;
             }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
@@ -736,10 +644,6 @@ pub enum SearchPatternInputWidget {
 
 impl Widget for SearchPatternInputWidget {
     fn render(&self, _state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
-        Ok(())
-    }
-
-    fn render_legend(&self, _state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
         Ok(())
     }
 
