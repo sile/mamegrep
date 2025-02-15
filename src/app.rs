@@ -11,6 +11,7 @@ use crate::{
     terminal::Terminal,
     widget_command_editor::CommandEditorWidget,
     widget_legend::LegendWidget,
+    widget_search_result::SearchResultWidget,
 };
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -25,6 +26,7 @@ pub struct App {
     widgets: Vec<Box<dyn 'static + Widget>>,
     legend: LegendWidget,
     command_editor: CommandEditorWidget,
+    search_result: SearchResultWidget,
 }
 
 impl App {
@@ -40,6 +42,7 @@ impl App {
             })],
             legend: LegendWidget::default(),
             command_editor: CommandEditorWidget::default(),
+            search_result: SearchResultWidget::default(),
         })
     }
 
@@ -66,6 +69,8 @@ impl App {
         for widget in &self.widgets {
             widget.render(&self.state, &mut canvas).or_fail()?;
         }
+        self.command_editor.render(&self.state, &mut canvas);
+        self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 

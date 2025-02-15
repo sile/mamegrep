@@ -1,11 +1,11 @@
 use crate::{app::AppState, canvas::Canvas};
 
 #[derive(Debug, Default)]
-pub struct CommandEditorWidget {
+pub struct SearchResultWidget {
     //
 }
 
-impl CommandEditorWidget {
+impl SearchResultWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         //
     }
