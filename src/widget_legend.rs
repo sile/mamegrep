@@ -4,12 +4,12 @@ use crate::{
 };
 
 #[derive(Debug, Default)]
-pub struct WidgetLegend {
+pub struct LegendWidget {
     pub hide: bool,
     pub editing: bool, // TODO: Move to AppState
 }
 
-impl WidgetLegend {
+impl LegendWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         // TODO: caller's responsibility
         canvas.set_cursor(TokenPosition::row(2));

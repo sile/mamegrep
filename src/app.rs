@@ -9,7 +9,8 @@ use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
     git::{GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
-    widget_legend::WidgetLegend,
+    widget_command_editor::CommandEditorWidget,
+    widget_legend::LegendWidget,
 };
 
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -22,7 +23,8 @@ pub struct App {
     frame_row_start: usize,
     state: AppState,
     widgets: Vec<Box<dyn 'static + Widget>>,
-    legend: WidgetLegend,
+    legend: LegendWidget,
+    command_editor: CommandEditorWidget,
 }
 
 impl App {
@@ -36,7 +38,8 @@ impl App {
             widgets: vec![Box::new(MainWidget {
                 tree: Tree::default(),
             })],
-            legend: WidgetLegend::default(),
+            legend: LegendWidget::default(),
+            command_editor: CommandEditorWidget::default(),
         })
     }
 
