@@ -66,10 +66,10 @@ impl App {
         }
 
         let mut canvas = Canvas::new(self.frame_row_start, self.terminal.size());
+        self.command_editor.render(&self.state, &mut canvas);
         for widget in &self.widgets {
             widget.render(&self.state, &mut canvas).or_fail()?;
         }
-        self.command_editor.render(&self.state, &mut canvas);
         self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
@@ -145,6 +145,7 @@ pub struct AppState {
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
     pub show_terminal_cursor: Option<TokenPosition>,
+    pub editing: bool,
 }
 
 impl AppState {
@@ -393,6 +394,7 @@ impl Widget for MainWidget {
         match event.code {
             KeyCode::Char('/') | KeyCode::Char('e') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
+                state.editing = true;
             }
             KeyCode::Char('a') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::AndPattern));
@@ -666,6 +668,7 @@ impl Widget for SearchPatternInputWidget {
             KeyCode::Enter => {
                 state.regrep().or_fail()?;
                 state.show_terminal_cursor = None;
+                state.editing = false;
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {
