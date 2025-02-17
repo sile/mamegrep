@@ -135,6 +135,10 @@ pub struct GrepOptions {
 }
 
 impl GrepOptions {
+    pub fn args(&self) -> Vec<String> {
+        self.build_grep_args(Mode::External)
+    }
+
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
         format!("$ git {}", self.build_grep_args(Mode::External).join(" "))
