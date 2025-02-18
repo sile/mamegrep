@@ -116,14 +116,40 @@ impl Default for ContextLines {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GrepArgKind {
-    Flag,
     Pattern,
     AndPattern,
     NotPattern,
     Revision,
     Path,
+    Other,
+}
+
+impl GrepArgKind {
+    fn other(s: &str) -> (Self, String) {
+        (Self::Other, s.to_owned())
+    }
+
+    fn pattern(s: &str) -> (Self, String) {
+        (Self::Pattern, s.to_owned())
+    }
+
+    fn and_pattern(s: &str) -> (Self, String) {
+        (Self::AndPattern, s.to_owned())
+    }
+
+    fn not_pattern(s: &str) -> (Self, String) {
+        (Self::NotPattern, s.to_owned())
+    }
+
+    fn revision(s: &str) -> (Self, String) {
+        (Self::Revision, s.to_owned())
+    }
+
+    fn path(s: &str) -> (Self, String) {
+        (Self::Path, s.to_owned())
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -145,90 +171,101 @@ pub struct GrepOptions {
 }
 
 impl GrepOptions {
-    pub fn args(&self) -> Vec<String> {
+    pub fn args(&self) -> Vec<(GrepArgKind, String)> {
         self.build_grep_args(Mode::External)
     }
 
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
-        format!("$ git {}", self.build_grep_args(Mode::External).join(" "))
+        format!(
+            "$ git {}",
+            self.build_grep_args(Mode::External)
+                .into_iter()
+                .map(|x| x.1)
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 
     pub fn call(&self) -> orfail::Result<SearchResult> {
         // TODO: Execute in parallel.
         let args = self.build_grep_args(Mode::Highlight);
-        let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.1.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
         let highlight = Highlight::parse(&output).or_fail()?;
 
         let args = self.build_grep_args(Mode::Parsing);
-        let args = args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.1.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
 
         SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
     }
 
-    fn build_grep_args(&self, mode: Mode) -> Vec<String> {
-        let mut args = vec!["grep".to_string(), "-nI".to_string()];
+    fn build_grep_args(&self, mode: Mode) -> Vec<(GrepArgKind, String)> {
+        let mut args = vec![GrepArgKind::other("grep")];
+
+        let mut flags = "-nI".to_string();
         if self.ignore_case {
-            args.last_mut().expect("infallible").push('i');
+            flags.push('i');
         }
         if self.word_regexp {
-            args.last_mut().expect("infallible").push('w');
+            flags.push('w');
         }
         if self.extended_regexp {
-            args.last_mut().expect("infallible").push('E');
+            flags.push('E');
         }
         if self.fixed_strings {
-            args.last_mut().expect("infallible").push('F');
+            flags.push('F');
         }
         if self.perl_regexp {
-            args.last_mut().expect("infallible").push('P');
+            flags.push('P');
         }
+        args.push(GrepArgKind::other(&flags));
+
         if self.untracked {
-            args.push("--untracked".to_string());
+            args.push(GrepArgKind::other("--untracked"));
         }
         if self.no_index {
-            args.push("--no-index".to_string());
+            args.push(GrepArgKind::other("--no-index"));
         }
         if self.no_recursive {
-            args.push("--no-recursive".to_string());
+            args.push(GrepArgKind::other("--no-recursive"));
         }
         if matches!(mode, Mode::Parsing) && self.context_lines.0 > 0 {
-            args.push("--heading".to_string());
-            args.push("-C".to_string());
-            args.push(self.context_lines.0.to_string());
+            args.push(GrepArgKind::other("--heading"));
+            args.push(GrepArgKind::other("-C"));
+            args.push(GrepArgKind::other(&self.context_lines.0.to_string()));
         }
         if matches!(mode, Mode::Highlight) {
-            args.push("-o".to_string());
-            args.push("--heading".to_string());
+            args.push(GrepArgKind::other("-o"));
+            args.push(GrepArgKind::other("--heading"));
         }
 
         if !self.not_pattern.is_empty() || !self.and_pattern.is_empty() {
-            args.push("-e".to_string());
+            args.push(GrepArgKind::other("-e"));
         }
-        args.push(self.pattern.clone());
+        args.push(GrepArgKind::pattern(&self.pattern));
 
         if !self.and_pattern.is_empty() {
-            args.push("--and".to_string());
-            args.push("-e".to_string());
-            args.push(self.and_pattern.clone());
+            args.push(GrepArgKind::other("--and"));
+            args.push(GrepArgKind::other("-e"));
+            args.push(GrepArgKind::and_pattern(&self.and_pattern));
         }
         if !self.not_pattern.is_empty() {
-            args.push("--and".to_string());
-            args.push("--not".to_string());
-            args.push("-e".to_string());
-            args.push(self.not_pattern.clone());
+            args.push(GrepArgKind::other("--and"));
+            args.push(GrepArgKind::other("--not"));
+            args.push(GrepArgKind::other("-e"));
+            args.push(GrepArgKind::not_pattern(&self.not_pattern));
         }
         if !self.revision.is_empty() {
-            args.push(self.revision.clone());
+            args.push(GrepArgKind::revision(&self.revision));
             if self.path.is_empty() {
-                args.push("--".to_string());
+                args.push(GrepArgKind::other("--"));
             }
         }
         if !self.path.is_empty() {
-            args.push("--".to_string());
-            args.push(self.path.clone());
+            args.push(GrepArgKind::other("--"));
+            args.push(GrepArgKind::path(&self.path));
         }
         args
     }

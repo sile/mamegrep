@@ -2,7 +2,8 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::AppState,
-    canvas::{Canvas, Token, TokenPosition, TokenStyle},
+    canvas::{Canvas, Token, TokenStyle},
+    git::GrepArgKind,
 };
 
 #[derive(Debug, Default)]
@@ -21,11 +22,11 @@ impl CommandEditorWidget {
         canvas.newline();
     }
 
-    fn render_grep_args(&self, args: &[String], canvas: &mut Canvas) {
+    fn render_grep_args(&self, args: &[(GrepArgKind, String)], canvas: &mut Canvas) {
         // TODO: use canvas.size().columns
         let columns = 20;
         let offset = canvas.cursor().col;
-        for arg in args {
+        for (_, arg) in args {
             let is_head_arg = offset == canvas.cursor().col;
             if !is_head_arg && offset + arg.width() > columns {
                 canvas.newline();
