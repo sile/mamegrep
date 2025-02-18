@@ -6,7 +6,7 @@ pub struct SearchResultWidget {
 }
 
 impl SearchResultWidget {
-    pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+    pub fn render(&self, _state: &AppState, _canvas: &mut Canvas) {
         //
     }
 }

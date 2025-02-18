@@ -110,7 +110,12 @@ impl App {
                 self.state.dirty = true;
             }
             _ => {
-                if let Some(widget) = self.widgets.last_mut() {
+                let old_focus = self.state.focus;
+                if self.state.focus == Focus::Pattern {
+                    self.command_editor
+                        .handle_key_event(&mut self.state, event)
+                        .or_fail()?;
+                } else if let Some(widget) = self.widgets.last_mut() {
                     if !widget.handle_key_event(&mut self.state, event).or_fail()? {
                         self.widgets.pop();
                         self.state.dirty = true;
@@ -119,11 +124,16 @@ impl App {
                         self.widgets.push(widget);
                         self.state.dirty = true;
                     }
-                    if let Some(position) = self.state.show_terminal_cursor {
-                        self.terminal.show_cursor(position).or_fail()?;
-                    } else {
-                        self.terminal.hide_cursor().or_fail()?;
-                    }
+                }
+
+                if old_focus != self.state.focus {
+                    self.command_editor.handle_focus_change(&mut self.state);
+                }
+
+                if let Some(position) = self.state.show_terminal_cursor {
+                    self.terminal.show_cursor(position).or_fail()?;
+                } else {
+                    self.terminal.hide_cursor().or_fail()?;
                 }
             }
         }
@@ -136,6 +146,17 @@ impl App {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Focus {
+    #[default]
+    SearchResult,
+    Pattern,
+    AndPatter,
+    NotPattern,
+    Revision,
+    Path,
+}
+
 #[derive(Debug, Default)]
 pub struct AppState {
     pub grep: GrepOptions,
@@ -146,6 +167,7 @@ pub struct AppState {
     pub collapsed: BTreeSet<PathBuf>,
     pub show_terminal_cursor: Option<TokenPosition>,
     pub editing: bool,
+    pub focus: Focus,
 }
 
 impl AppState {
@@ -392,7 +414,12 @@ impl Widget for MainWidget {
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
-            KeyCode::Char('/') | KeyCode::Char('e') => {
+            KeyCode::Char('/') if state.focus == Focus::SearchResult => {
+                state.focus = Focus::Pattern;
+                state.dirty = true;
+            }
+            // TODO:
+            KeyCode::Char('e') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
                 state.editing = true;
             }
@@ -658,12 +685,6 @@ impl Widget for SearchPatternInputWidget {
     }
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
-        // TODO:
-        if state.show_terminal_cursor.is_none() {
-            state.show_terminal_cursor = Some(TokenPosition::row(0));
-            state.dirty = true;
-        }
-
         match event.code {
             KeyCode::Enter => {
                 state.regrep().or_fail()?;
