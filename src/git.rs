@@ -116,6 +116,16 @@ impl Default for ContextLines {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum GrepArgKind {
+    Flag,
+    Pattern,
+    AndPattern,
+    NotPattern,
+    Revision,
+    Path,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct GrepOptions {
     pub pattern: String,
