@@ -36,9 +36,11 @@ impl LegendWidget {
 
         canvas.drawln(Token::new("|[ACTIONS]            "));
         canvas.drawln(Token::new("| quit       [ESC,C-c]"));
+        canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| search       [ENTER]"));
         canvas.drawln(Token::new("| preview        [TAB]"));
         canvas.drawln(Token::new("| cancel         [C-g]"));
+        canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| (BACKSPACE)    [C-h]"));
         canvas.drawln(Token::new("| (DELETE)       [C-d]"));
         canvas.drawln(Token::new("| (←)            [C-b]"));
@@ -56,6 +58,13 @@ impl LegendWidget {
 
         canvas.drawln(Token::new("|[ACTIONS]            "));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
+        canvas.drawln(Token::new("|                     "));
+        canvas.drawln(Token::new("| (e)dit pattern   [/]"));
+        canvas.drawln(Token::new("| edit (a)nd pattern  "));
+        canvas.drawln(Token::new("| edit (n)ot pattern  "));
+        canvas.drawln(Token::new("| edit (r)evision     "));
+        canvas.drawln(Token::new("| edit (p)ath         "));
+        canvas.drawln(Token::new("|                     "));
 
         // TODO: conditional
         canvas.drawln(Token::new("| (t)oggle       [TAB]"));
@@ -65,14 +74,6 @@ impl LegendWidget {
         canvas.drawln(Token::new("| (←)            [C-b]"));
         canvas.drawln(Token::new("| (→)            [C-f]"));
         canvas.drawln(Token::new("| (+|-) context lines "));
-
-        canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("|[EDIT PATTERNS]      "));
-        canvas.drawln(Token::new("| (e)dit pattern   [/]"));
-        canvas.drawln(Token::new("| edit (a)nd pattern  "));
-        canvas.drawln(Token::new("| edit (n)ot pattern  "));
-        canvas.drawln(Token::new("| edit (r)evision     "));
-        canvas.drawln(Token::new("| edit (p)ath         "));
 
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("|[GIT GREP FLAGS]     "));
