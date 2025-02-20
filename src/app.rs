@@ -133,6 +133,7 @@ impl App {
                     self.command_editor.handle_focus_change(&mut self.state);
                 }
 
+                // TODO: move to where after calling render()
                 if let Some(position) = self.state.show_terminal_cursor {
                     self.terminal.show_cursor(position).or_fail()?;
                 } else {
@@ -169,7 +170,6 @@ pub struct AppState {
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
     pub show_terminal_cursor: Option<TokenPosition>,
-    pub editing: bool,
     pub focus: Focus,
 }
 
@@ -423,7 +423,6 @@ impl Widget for MainWidget {
             // TODO:
             KeyCode::Char('e') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
-                state.editing = true;
             }
             KeyCode::Char('a') => {
                 state.new_widget = Some(Box::new(SearchPatternInputWidget::AndPattern));
@@ -687,11 +686,11 @@ impl Widget for SearchPatternInputWidget {
     }
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+        // TODO: move to widget
         match event.code {
             KeyCode::Enter => {
                 state.regrep().or_fail()?;
                 state.show_terminal_cursor = None;
-                state.editing = false;
                 return Ok(false);
             }
             KeyCode::Char(c) if !c.is_control() => {

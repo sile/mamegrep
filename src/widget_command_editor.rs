@@ -48,6 +48,7 @@ impl CommandEditorWidget {
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
                 state.dirty = true;
+                state.show_terminal_cursor = None;
             }
             // TODO: regrep (ctrl-s ? or TAB)
             // TODO: C-a, C-e, C-b, C-f, C-k, C-d, C-h
