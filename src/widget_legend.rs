@@ -1,19 +1,15 @@
 use crate::{
-    app::AppState,
-    canvas::{Canvas, Token, TokenPosition},
+    app::{AppState, Focus},
+    canvas::{Canvas, Token},
 };
 
 #[derive(Debug, Default)]
 pub struct LegendWidget {
     pub hide: bool,
-    pub editing: bool, // TODO: Move to AppState
 }
 
 impl LegendWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
-        // TODO: caller's responsibility
-        canvas.set_cursor(TokenPosition::row(2));
-
         if self.hide {
             let col = canvas.frame_size().cols - 11;
             canvas.set_col_offset(col);
@@ -21,15 +17,33 @@ impl LegendWidget {
             return;
         }
 
-        if self.editing {
-            // TODO
-            return;
+        if matches!(state.focus, Focus::SearchResult) {
+            self.render_search_result_legend(state, canvas);
         } else {
-            self.render_main_legend(state, canvas);
+            self.render_editing_legend(state, canvas);
         }
     }
 
-    fn render_main_legend(&self, state: &AppState, canvas: &mut Canvas) {
+    fn render_editing_legend(&self, _state: &AppState, canvas: &mut Canvas) {
+        let width = 19;
+        if canvas.frame_size().cols < width {
+            return;
+        }
+        canvas.set_col_offset(canvas.frame_size().cols - width);
+
+        canvas.drawln(Token::new("| search    [ENTER]"));
+        canvas.drawln(Token::new("| preview     [TAB]"));
+        canvas.drawln(Token::new("| cancel      [C-g]"));
+        canvas.drawln(Token::new("| (BACKSPACE) [C-h]"));
+        canvas.drawln(Token::new("| (DELETE)    [C-d]"));
+        canvas.drawln(Token::new("| (←)         [C-b]"));
+        canvas.drawln(Token::new("| (→)         [C-f]"));
+        canvas.drawln(Token::new("| go to head  [C-a]"));
+        canvas.drawln(Token::new("| go to tail  [C-e]"));
+        canvas.drawln(Token::new("+------(h)ide------"));
+    }
+
+    fn render_search_result_legend(&self, state: &AppState, canvas: &mut Canvas) {
         let width = 22;
         if canvas.frame_size().cols < width {
             return;

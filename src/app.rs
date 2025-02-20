@@ -67,11 +67,14 @@ impl App {
 
         let mut canvas = Canvas::new(self.frame_row_start, self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
+        let mut position = canvas.cursor();
         for widget in &self.widgets {
             widget.render(&self.state, &mut canvas).or_fail()?;
         }
-        self.search_result.render(&self.state, &mut canvas);
+        position.row += 1;
+        canvas.set_cursor(position);
         self.legend.render(&self.state, &mut canvas);
+        self.search_result.render(&self.state, &mut canvas);
         self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
 
         self.state.dirty = false;
@@ -402,7 +405,6 @@ pub struct MainWidget {
 
 impl Widget for MainWidget {
     fn render(&self, state: &AppState, canvas: &mut Canvas) -> orfail::Result<()> {
-        canvas.drawln(Token::new(state.grep.command_string()));
         canvas.drawln(Token::new(
             std::iter::repeat_n('-', canvas.frame_size().cols).collect::<String>(),
         ));
