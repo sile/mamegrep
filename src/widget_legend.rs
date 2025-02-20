@@ -1,6 +1,6 @@
 use crate::{
     app::{AppState, Focus},
-    canvas::{Canvas, Token},
+    canvas::{Canvas, Token, TokenPosition},
 };
 
 #[derive(Debug, Default)]
@@ -9,7 +9,11 @@ pub struct LegendWidget {
 }
 
 impl LegendWidget {
+    pub const COLUMNS: usize = 22;
+
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+        canvas.set_cursor(TokenPosition::row(0));
+
         if self.hide {
             let col = canvas.frame_size().cols - 11;
             canvas.set_col_offset(col);
@@ -25,33 +29,32 @@ impl LegendWidget {
     }
 
     fn render_editing_legend(&self, _state: &AppState, canvas: &mut Canvas) {
-        let width = 19;
-        if canvas.frame_size().cols < width {
+        if canvas.frame_size().cols < Self::COLUMNS {
             return;
         }
-        canvas.set_col_offset(canvas.frame_size().cols - width);
+        canvas.set_col_offset(canvas.frame_size().cols - Self::COLUMNS);
 
-        canvas.drawln(Token::new("| search    [ENTER]"));
-        canvas.drawln(Token::new("| preview     [TAB]"));
-        canvas.drawln(Token::new("| cancel      [C-g]"));
-        canvas.drawln(Token::new("| (BACKSPACE) [C-h]"));
-        canvas.drawln(Token::new("| (DELETE)    [C-d]"));
-        canvas.drawln(Token::new("| (←)         [C-b]"));
-        canvas.drawln(Token::new("| (→)         [C-f]"));
-        canvas.drawln(Token::new("| go to head  [C-a]"));
-        canvas.drawln(Token::new("| go to tail  [C-e]"));
-        canvas.drawln(Token::new("+------(h)ide------"));
+        canvas.drawln(Token::new("|[ACTIONS]            "));
+        canvas.drawln(Token::new("| quit       [ESC,C-c]"));
+        canvas.drawln(Token::new("| search       [ENTER]"));
+        canvas.drawln(Token::new("| preview        [TAB]"));
+        canvas.drawln(Token::new("| cancel         [C-g]"));
+        canvas.drawln(Token::new("| (BACKSPACE)    [C-h]"));
+        canvas.drawln(Token::new("| (DELETE)       [C-d]"));
+        canvas.drawln(Token::new("| (←)            [C-b]"));
+        canvas.drawln(Token::new("| (→)            [C-f]"));
+        canvas.drawln(Token::new("| go to head     [C-a]"));
+        canvas.drawln(Token::new("| go to tail     [C-e]"));
+        canvas.drawln(Token::new("+-------(h)ide--------"));
     }
 
     fn render_search_result_legend(&self, state: &AppState, canvas: &mut Canvas) {
-        let width = 22;
-        if canvas.frame_size().cols < width {
+        if canvas.frame_size().cols < Self::COLUMNS {
             return;
         }
+        canvas.set_col_offset(canvas.frame_size().cols - Self::COLUMNS);
 
-        canvas.set_col_offset(canvas.frame_size().cols - width);
-
-        canvas.drawln(Token::new("|= actions ==========="));
+        canvas.drawln(Token::new("|[ACTIONS]            "));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
 
         // TODO: conditional
@@ -64,7 +67,7 @@ impl LegendWidget {
         canvas.drawln(Token::new("| (+|-) context lines "));
 
         canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("|= git grep patterns ="));
+        canvas.drawln(Token::new("|[EDIT PATTERNS]      "));
         canvas.drawln(Token::new("| (e)dit pattern   [/]"));
         canvas.drawln(Token::new("| edit (a)nd pattern  "));
         canvas.drawln(Token::new("| edit (n)ot pattern  "));
@@ -72,7 +75,7 @@ impl LegendWidget {
         canvas.drawln(Token::new("| edit (p)ath         "));
 
         canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("|= git grep flags ===="));
+        canvas.drawln(Token::new("|[GIT GREP FLAGS]     "));
 
         if state.grep.ignore_case {
             canvas.drawln(Token::new("|o --(i)gnore-case    "));

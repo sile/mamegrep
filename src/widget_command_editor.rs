@@ -16,7 +16,7 @@ impl CommandEditorWidget {
         // TODO: use terminal size columns
         let columns = 20;
         let offset = 8; // TODO: const
-        let mut row = 0;
+        let mut row = 1;
         let mut col = offset;
         for (kind, arg) in state.grep.args() {
             let is_head_arg = offset == col;
@@ -67,6 +67,8 @@ impl CommandEditorWidget {
     }
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+        canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Bold));
+
         if state.focus != Focus::SearchResult {
             // TODO: consider multi line
             // TODO: consider focus
