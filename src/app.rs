@@ -129,18 +129,18 @@ impl App {
                 if old_focus != self.state.focus {
                     self.command_editor.handle_focus_change(&mut self.state);
                 }
-
-                // TODO: move to where after calling render()
-                if let Some(position) = self.state.show_terminal_cursor {
-                    self.terminal.show_cursor(position).or_fail()?;
-                } else {
-                    self.terminal.hide_cursor().or_fail()?;
-                }
             }
         }
 
         if self.state.dirty {
             self.render().or_fail()?;
+
+            // TODO: move to where after calling render()
+            if let Some(position) = self.state.show_terminal_cursor {
+                self.terminal.show_cursor(position).or_fail()?;
+            } else {
+                self.terminal.hide_cursor().or_fail()?;
+            }
         }
 
         Ok(())

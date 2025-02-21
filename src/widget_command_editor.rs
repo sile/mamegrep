@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
 use unicode_width::UnicodeWidthStr;
 
@@ -9,7 +9,10 @@ use crate::{
 };
 
 #[derive(Debug, Default)]
-pub struct CommandEditorWidget {}
+pub struct CommandEditorWidget {
+    original_text: String,
+    index: usize,
+}
 
 impl CommandEditorWidget {
     pub fn handle_focus_change(&mut self, state: &mut AppState) {
@@ -35,6 +38,14 @@ impl CommandEditorWidget {
             }
         }
 
+        match state.focus {
+            Focus::Pattern => {
+                self.original_text = state.grep.pattern.clone();
+                self.index = state.grep.pattern.len();
+            }
+            _ => {}
+        }
+
         state.dirty = true;
     }
 
@@ -43,6 +54,7 @@ impl CommandEditorWidget {
         state: &mut AppState,
         event: KeyEvent,
     ) -> orfail::Result<()> {
+        let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
         match event.code {
             KeyCode::Enter => {
                 state.regrep().or_fail()?;
@@ -50,9 +62,26 @@ impl CommandEditorWidget {
                 state.dirty = true;
                 state.show_terminal_cursor = None;
             }
-            // TODO: regrep (ctrl-s ? or TAB)
+            KeyCode::Tab => {
+                state.regrep().or_fail()?;
+                state.dirty = true;
+            }
+            KeyCode::Char('g') if ctrl => {
+                match state.focus {
+                    Focus::Pattern => {
+                        state.grep.pattern = self.original_text.clone();
+                    }
+                    _ => {}
+                }
+                state.regrep().or_fail()?;
+                state.focus = Focus::SearchResult;
+                state.dirty = true;
+            }
+            KeyCode::Char(_) if ctrl => {
+                // ignore
+            }
             // TODO: C-a, C-e, C-b, C-f, C-k, C-d, C-h
-            KeyCode::Char(c) if !c.is_control() => {
+            KeyCode::Char(c) if c.is_alphanumeric() || c == ' ' => {
                 // TODO: escape
                 state.grep.pattern.push(c);
                 state.dirty = true;
