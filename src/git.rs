@@ -116,6 +116,23 @@ impl Default for ContextLines {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct GrepArg {
+    pub kind: GrepArgKind,
+    pub text: String,
+    pub cursor_index: usize,
+}
+
+impl GrepArg {
+    pub fn new(kind: GrepArgKind) -> Self {
+        Self {
+            kind,
+            text: String::new(),
+            cursor_index: 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GrepArgKind {
     Pattern,

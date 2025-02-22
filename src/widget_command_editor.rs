@@ -15,9 +15,14 @@ pub struct CommandEditorWidget {
 }
 
 impl CommandEditorWidget {
-    pub fn handle_focus_change(&mut self, state: &mut AppState) {
+    fn available_columns(&self, _state: &AppState) -> usize {
         // TODO: use terminal size columns
-        let columns = 20;
+        // TODO: use canvas.size().columns
+        10
+    }
+
+    pub fn handle_focus_change(&mut self, state: &mut AppState) {
+        let columns = self.available_columns(state);
         let offset = 8; // TODO: const
         let mut row = 1;
         let mut col = offset;
@@ -77,6 +82,7 @@ impl CommandEditorWidget {
             {
                 state.grep.pattern.insert(self.index, c);
                 self.index += c.len_utf8();
+                // TODO: consider row change
                 state.show_terminal_cursor.as_mut().or_fail()?.col += c.width().or_fail()?;
                 state.dirty = true;
             }
@@ -157,13 +163,17 @@ impl CommandEditorWidget {
             canvas.draw(Token::new("   "));
         }
         canvas.draw(Token::new("$ git"));
-        self.render_grep_args(&state.grep.args(), canvas);
+        self.render_grep_args(&state.grep.args(), canvas, state);
         canvas.newline();
     }
 
-    fn render_grep_args(&self, args: &[(GrepArgKind, String)], canvas: &mut Canvas) {
-        // TODO: use canvas.size().columns
-        let columns = 20;
+    fn render_grep_args(
+        &self,
+        args: &[(GrepArgKind, String)],
+        canvas: &mut Canvas,
+        state: &AppState,
+    ) {
+        let columns = self.available_columns(state);
         let offset = canvas.cursor().col;
         for (_, arg) in args {
             let is_head_arg = offset == canvas.cursor().col;
