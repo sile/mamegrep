@@ -133,6 +133,22 @@ impl GrepArg {
         }
     }
 
+    pub fn insert(&mut self, i: usize, c: char) {
+        self.text.insert(i, c);
+    }
+
+    pub fn remove(&mut self, i: usize) -> Option<char> {
+        (i < self.text.len()).then(|| self.text.remove(i))
+    }
+
+    pub fn next_char(&self, i: usize) -> Option<char> {
+        self.text[i..].chars().next()
+    }
+
+    pub fn prev_char(&self, i: usize) -> Option<char> {
+        self.text[..i].chars().rev().next()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.text.is_empty()
     }

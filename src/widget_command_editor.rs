@@ -80,7 +80,7 @@ impl CommandEditorWidget {
             (false, KeyCode::Char(c))
                 if c.is_alphanumeric() || c.is_ascii_graphic() || c == ' ' =>
             {
-                state.grep.pattern.insert(self.index, c);
+                state.focused_arg_mut().or_fail()?.insert(self.index, c);
                 self.index += c.len_utf8();
                 // TODO: consider row change
                 state.show_terminal_cursor.as_mut().or_fail()?.col += c.width().or_fail()?;
@@ -88,38 +88,32 @@ impl CommandEditorWidget {
             }
             (false, KeyCode::Backspace) => {
                 if self.index > 0 {
-                    let c = state.grep.pattern[..self.index]
-                        .chars()
-                        .rev()
-                        .next()
-                        .or_fail()?;
+                    let arg = state.focused_arg_mut().or_fail()?;
+                    let c = arg.prev_char(self.index).or_fail()?;
                     self.index -= c.len_utf8();
-                    state.grep.pattern.remove(self.index);
+                    arg.remove(self.index).or_fail()?;
                     state.show_terminal_cursor.as_mut().or_fail()?.col -= c.width().or_fail()?;
                     state.dirty = true;
                 }
             }
             (false, KeyCode::Delete) | (true, KeyCode::Char('d')) => {
-                if self.index < state.grep.pattern.len() {
-                    state.grep.pattern.remove(self.index);
+                let arg = state.focused_arg_mut().or_fail()?;
+                if arg.remove(self.index).is_some() {
                     state.dirty = true;
                 }
             }
             (false, KeyCode::Left) | (true, KeyCode::Char('b')) => {
                 if self.index > 0 {
-                    let c = state.grep.pattern[..self.index]
-                        .chars()
-                        .rev()
-                        .next()
-                        .or_fail()?;
+                    let arg = state.focused_arg_mut().or_fail()?;
+                    let c = arg.prev_char(self.index).or_fail()?;
                     self.index -= c.len_utf8();
                     state.show_terminal_cursor.as_mut().or_fail()?.col -= c.width().or_fail()?;
                     state.dirty = true;
                 }
             }
             (false, KeyCode::Right) | (true, KeyCode::Char('f')) => {
-                if self.index < state.grep.pattern.len() {
-                    let c = state.grep.pattern[self.index..].chars().next().or_fail()?;
+                let arg = state.focused_arg_mut().or_fail()?;
+                if let Some(c) = arg.next_char(self.index) {
                     self.index += c.len_utf8();
                     state.show_terminal_cursor.as_mut().or_fail()?.col += c.width().or_fail()?;
                     state.dirty = true;
@@ -127,7 +121,8 @@ impl CommandEditorWidget {
             }
             (true, KeyCode::Char('a')) => {
                 if self.index > 0 {
-                    let width = state.grep.pattern[..self.index]
+                    let arg = state.focused_arg_mut().or_fail()?;
+                    let width = arg.text[..self.index]
                         .chars()
                         .map(|c| c.width().unwrap_or_default())
                         .sum::<usize>();
@@ -137,8 +132,9 @@ impl CommandEditorWidget {
                 }
             }
             (true, KeyCode::Char('e')) => {
-                if self.index < state.grep.pattern.len() {
-                    let width = state.grep.pattern[self.index..]
+                let arg = state.focused_arg_mut().or_fail()?;
+                if self.index < arg.len() {
+                    let width = arg.text[self.index..]
                         .chars()
                         .map(|c| c.width().unwrap_or_default())
                         .sum::<usize>();
