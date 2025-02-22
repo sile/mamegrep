@@ -1,11 +1,11 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
-use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+use unicode_width::UnicodeWidthChar;
 
 use crate::{
     app::{AppState, Focus},
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    git::GrepArgKind,
+    git::{GrepArg, GrepArgKind},
 };
 
 #[derive(Debug, Default)]
@@ -26,15 +26,15 @@ impl CommandEditorWidget {
         let offset = 8; // TODO: const
         let mut row = 1;
         let mut col = offset;
-        for (kind, arg) in state.grep.args() {
+        for arg in state.grep.args() {
             let is_head_arg = offset == col;
-            let token_width = format!(" {arg}").width();
+            let token_width = arg.width(state.focus) + 1; // +1 for ' '
             if !is_head_arg && offset + token_width > columns {
                 row += 1;
                 col = offset;
             }
             col += token_width;
-            match (kind, state.focus) {
+            match (arg.kind, state.focus) {
                 (GrepArgKind::Pattern, Focus::Pattern) => {
                     state.show_terminal_cursor = Some(TokenPosition::row_col(row, col));
                     self.original_text = state.grep.pattern.clone();
@@ -158,7 +158,7 @@ impl CommandEditorWidget {
         if state.focus != Focus::SearchResult {
             // TODO: consider multi line
             // TODO: consider focus
-            canvas.draw(Token::with_style("-> ", TokenStyle::Bold));
+            canvas.draw(Token::new("-> "));
         } else {
             canvas.draw(Token::new("   "));
         }
@@ -167,25 +167,20 @@ impl CommandEditorWidget {
         canvas.newline();
     }
 
-    fn render_grep_args(
-        &self,
-        args: &[(GrepArgKind, String)],
-        canvas: &mut Canvas,
-        state: &AppState,
-    ) {
+    fn render_grep_args(&self, args: &[GrepArg], canvas: &mut Canvas, state: &AppState) {
         let columns = self.available_columns(state);
         let offset = canvas.cursor().col;
-        for (_, arg) in args {
+        for arg in args {
             let is_head_arg = offset == canvas.cursor().col;
             // TODO: consider ' ' prefix
-            if !is_head_arg && offset + arg.width() > columns {
+            if !is_head_arg && offset + arg.width(state.focus) > columns {
                 canvas.newline();
 
                 let mut cursor = canvas.cursor();
                 cursor.col = offset;
                 canvas.set_cursor(cursor);
             }
-            canvas.draw(Token::new(format!(" {arg}")));
+            canvas.draw(Token::new(format!(" {}", arg.text(state.focus))));
         }
     }
 }

@@ -152,7 +152,7 @@ pub enum Focus {
     #[default]
     SearchResult,
     Pattern,
-    AndPatter,
+    AndPattern,
     NotPattern,
     Revision,
     Path,

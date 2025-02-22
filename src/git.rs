@@ -1,6 +1,9 @@
-use std::{collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Command};
+use std::{borrow::Cow, collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Command};
 
 use orfail::OrFail;
+use unicode_width::UnicodeWidthStr;
+
+use crate::app::Focus;
 
 pub const DEFAULT_CONTEXT_LINES: usize = 4;
 
@@ -119,22 +122,38 @@ impl Default for ContextLines {
 #[derive(Debug, Clone)]
 pub struct GrepArg {
     pub kind: GrepArgKind,
-    pub text: String,
+    pub text: String, // TODO: private
     pub cursor_index: usize,
 }
 
 impl GrepArg {
-    pub fn new(kind: GrepArgKind) -> Self {
+    pub fn new(kind: GrepArgKind, text: &str) -> Self {
         Self {
             kind,
-            text: String::new(),
+            text: text.to_string(),
             cursor_index: 0,
         }
     }
 
-    pub fn to_quoted_text(&self) -> String {
+    pub fn text(&self, focus: Focus) -> Cow<str> {
+        match (self.kind, focus) {
+            (GrepArgKind::Pattern, Focus::Pattern)
+            | (GrepArgKind::AndPattern, Focus::AndPattern)
+            | (GrepArgKind::NotPattern, Focus::NotPattern)
+            | (GrepArgKind::Path, Focus::Path)
+            | (GrepArgKind::Revision, Focus::Revision)
+            | (GrepArgKind::Other, _) => Cow::Borrowed(&self.text),
+            _ => self.to_quoted_text(),
+        }
+    }
+
+    pub fn width(&self, focus: Focus) -> usize {
+        self.text(focus).width()
+    }
+
+    pub fn to_quoted_text(&self) -> Cow<str> {
         if !self.text.contains([' ', '\'']) {
-            return self.text.clone();
+            return Cow::Borrowed(&self.text);
         }
 
         let mut quoted = String::new();
@@ -147,7 +166,7 @@ impl GrepArg {
             }
         }
         quoted.push('\'');
-        quoted
+        Cow::Owned(quoted)
     }
 }
 
@@ -161,29 +180,30 @@ pub enum GrepArgKind {
     Other,
 }
 
-impl GrepArgKind {
-    fn other(s: &str) -> (Self, String) {
-        (Self::Other, s.to_owned())
+// TODO: move
+impl GrepArg {
+    fn other(s: &str) -> Self {
+        Self::new(GrepArgKind::Other, s)
     }
 
-    fn pattern(s: &str) -> (Self, String) {
-        (Self::Pattern, s.to_owned())
+    fn pattern(s: &str) -> Self {
+        Self::new(GrepArgKind::Pattern, s)
     }
 
-    fn and_pattern(s: &str) -> (Self, String) {
-        (Self::AndPattern, s.to_owned())
+    fn and_pattern(s: &str) -> Self {
+        Self::new(GrepArgKind::AndPattern, s)
     }
 
-    fn not_pattern(s: &str) -> (Self, String) {
-        (Self::NotPattern, s.to_owned())
+    fn not_pattern(s: &str) -> Self {
+        Self::new(GrepArgKind::NotPattern, s)
     }
 
-    fn revision(s: &str) -> (Self, String) {
-        (Self::Revision, s.to_owned())
+    fn revision(s: &str) -> Self {
+        Self::new(GrepArgKind::Revision, s)
     }
 
-    fn path(s: &str) -> (Self, String) {
-        (Self::Path, s.to_owned())
+    fn path(s: &str) -> Self {
+        Self::new(GrepArgKind::Path, s)
     }
 }
 
@@ -206,7 +226,7 @@ pub struct GrepOptions {
 }
 
 impl GrepOptions {
-    pub fn args(&self) -> Vec<(GrepArgKind, String)> {
+    pub fn args(&self) -> Vec<GrepArg> {
         self.build_grep_args(Mode::External)
     }
 
@@ -216,7 +236,7 @@ impl GrepOptions {
             "$ git {}",
             self.build_grep_args(Mode::External)
                 .into_iter()
-                .map(|x| x.1)
+                .map(|x| x.to_quoted_text().into_owned())
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -225,20 +245,20 @@ impl GrepOptions {
     pub fn call(&self) -> orfail::Result<SearchResult> {
         // TODO: Execute in parallel.
         let args = self.build_grep_args(Mode::Highlight);
-        let args = args.iter().map(|s| s.1.as_str()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
         let highlight = Highlight::parse(&output).or_fail()?;
 
         let args = self.build_grep_args(Mode::Parsing);
-        let args = args.iter().map(|s| s.1.as_str()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
 
         SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
     }
 
     // TODO: s/String/GrepArg/ for escape handling
-    fn build_grep_args(&self, mode: Mode) -> Vec<(GrepArgKind, String)> {
-        let mut args = vec![GrepArgKind::other("grep")];
+    fn build_grep_args(&self, mode: Mode) -> Vec<GrepArg> {
+        let mut args = vec![GrepArg::other("grep")];
 
         let mut flags = "-nI".to_string();
         if self.ignore_case {
@@ -256,52 +276,52 @@ impl GrepOptions {
         if self.perl_regexp {
             flags.push('P');
         }
-        args.push(GrepArgKind::other(&flags));
+        args.push(GrepArg::other(&flags));
 
         if self.untracked {
-            args.push(GrepArgKind::other("--untracked"));
+            args.push(GrepArg::other("--untracked"));
         }
         if self.no_index {
-            args.push(GrepArgKind::other("--no-index"));
+            args.push(GrepArg::other("--no-index"));
         }
         if self.no_recursive {
-            args.push(GrepArgKind::other("--no-recursive"));
+            args.push(GrepArg::other("--no-recursive"));
         }
         if matches!(mode, Mode::Parsing) && self.context_lines.0 > 0 {
-            args.push(GrepArgKind::other("--heading"));
-            args.push(GrepArgKind::other("-C"));
-            args.push(GrepArgKind::other(&self.context_lines.0.to_string()));
+            args.push(GrepArg::other("--heading"));
+            args.push(GrepArg::other("-C"));
+            args.push(GrepArg::other(&self.context_lines.0.to_string()));
         }
         if matches!(mode, Mode::Highlight) {
-            args.push(GrepArgKind::other("-o"));
-            args.push(GrepArgKind::other("--heading"));
+            args.push(GrepArg::other("-o"));
+            args.push(GrepArg::other("--heading"));
         }
 
         if !self.not_pattern.is_empty() || !self.and_pattern.is_empty() {
-            args.push(GrepArgKind::other("-e"));
+            args.push(GrepArg::other("-e"));
         }
-        args.push(GrepArgKind::pattern(&self.pattern));
+        args.push(GrepArg::pattern(&self.pattern));
 
         if !self.and_pattern.is_empty() {
-            args.push(GrepArgKind::other("--and"));
-            args.push(GrepArgKind::other("-e"));
-            args.push(GrepArgKind::and_pattern(&self.and_pattern));
+            args.push(GrepArg::other("--and"));
+            args.push(GrepArg::other("-e"));
+            args.push(GrepArg::and_pattern(&self.and_pattern));
         }
         if !self.not_pattern.is_empty() {
-            args.push(GrepArgKind::other("--and"));
-            args.push(GrepArgKind::other("--not"));
-            args.push(GrepArgKind::other("-e"));
-            args.push(GrepArgKind::not_pattern(&self.not_pattern));
+            args.push(GrepArg::other("--and"));
+            args.push(GrepArg::other("--not"));
+            args.push(GrepArg::other("-e"));
+            args.push(GrepArg::not_pattern(&self.not_pattern));
         }
         if !self.revision.is_empty() {
-            args.push(GrepArgKind::revision(&self.revision));
+            args.push(GrepArg::revision(&self.revision));
             if self.path.is_empty() {
-                args.push(GrepArgKind::other("--"));
+                args.push(GrepArg::other("--"));
             }
         }
         if !self.path.is_empty() {
-            args.push(GrepArgKind::other("--"));
-            args.push(GrepArgKind::path(&self.path));
+            args.push(GrepArg::other("--"));
+            args.push(GrepArg::path(&self.path));
         }
         args
     }
@@ -315,16 +335,30 @@ pub fn is_available() -> bool {
         .is_some()
 }
 
-fn call(args: &[&str], check_status: bool) -> orfail::Result<String> {
+fn call<S>(args: &[S], check_status: bool) -> orfail::Result<String>
+where
+    S: AsRef<str>,
+{
     let output = Command::new("git")
-        .args(args)
+        .args(args.iter().map(|a| a.as_ref()))
         .output()
-        .or_fail_with(|e| format!("Failed to execute `$ git {}`: {e}", args.join(" ")))?;
+        .or_fail_with(|e| {
+            format!(
+                "Failed to execute `$ git {}`: {e}",
+                args.iter()
+                    .map(|a| a.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        })?;
 
     let error = |()| {
         format!(
             "Failed to execute `$ git {}`:\n{}\n",
-            args.join(" "),
+            args.iter()
+                .map(|a| a.as_ref())
+                .collect::<Vec<_>>()
+                .join(" "),
             String::from_utf8_lossy(&output.stderr)
         )
     };
