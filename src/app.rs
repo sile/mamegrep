@@ -95,8 +95,9 @@ impl App {
         }
 
         let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
+        let editing = !matches!(self.state.focus, Focus::SearchResult);
         match event.code {
-            KeyCode::Char('q') if matches!(self.state.focus, Focus::SearchResult) => {
+            KeyCode::Char('q') if !editing => {
                 self.exit = true;
             }
             KeyCode::Esc => {
@@ -105,13 +106,13 @@ impl App {
             KeyCode::Char('c') if ctrl => {
                 self.exit = true;
             }
-            KeyCode::Char('h') if matches!(self.state.focus, Focus::SearchResult) => {
+            KeyCode::Char('h') if !editing => {
                 self.legend.hide = !self.legend.hide;
                 self.state.dirty = true;
             }
             _ => {
                 let old_focus = self.state.focus;
-                if self.state.focus == Focus::Pattern {
+                if editing {
                     self.command_editor
                         .handle_key_event(&mut self.state, event)
                         .or_fail()?;
@@ -127,7 +128,9 @@ impl App {
                 }
 
                 if old_focus != self.state.focus {
-                    self.command_editor.handle_focus_change(&mut self.state);
+                    self.command_editor
+                        .handle_focus_change(&mut self.state)
+                        .or_fail()?;
                 }
             }
         }
@@ -175,10 +178,10 @@ impl AppState {
         match self.focus {
             Focus::SearchResult => None,
             Focus::Pattern => Some(&mut self.grep.pattern),
-            Focus::AndPattern => todo!(),
-            Focus::NotPattern => todo!(),
-            Focus::Revision => todo!(),
-            Focus::Path => todo!(),
+            Focus::AndPattern => Some(&mut self.grep.and_pattern),
+            Focus::NotPattern => Some(&mut self.grep.not_pattern),
+            Focus::Revision => Some(&mut self.grep.revision),
+            Focus::Path => Some(&mut self.grep.path),
         }
     }
 
@@ -406,6 +409,7 @@ pub trait Widget: std::fmt::Debug {
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool>;
 }
 
+// TODO: remove
 #[derive(Debug)]
 pub struct MainWidget {
     pub tree: Tree,
@@ -420,24 +424,28 @@ impl Widget for MainWidget {
     }
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
+        let editing = !matches!(state.focus, Focus::SearchResult);
         match event.code {
-            KeyCode::Char('/' | 'e') if state.focus == Focus::SearchResult => {
+            KeyCode::Char('/' | 'e') if !editing => {
                 state.focus = Focus::Pattern;
                 state.dirty = true;
             }
-            // TODO:
-            // KeyCode::Char('a') => {
-            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::AndPattern));
-            // }
-            // KeyCode::Char('n') => {
-            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::NotPattern));
-            // }
-            // KeyCode::Char('r') => {
-            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::Revision));
-            // }
-            // KeyCode::Char('p') => {
-            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::Path));
-            // }
+            KeyCode::Char('a') if !editing => {
+                state.focus = Focus::AndPattern;
+                state.dirty = true;
+            }
+            KeyCode::Char('n') if !editing => {
+                state.focus = Focus::NotPattern;
+                state.dirty = true;
+            }
+            KeyCode::Char('r') if !editing => {
+                state.focus = Focus::Revision;
+                state.dirty = true;
+            }
+            KeyCode::Char('p') if !editing => {
+                state.focus = Focus::Path;
+                state.dirty = true;
+            }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
                 state.regrep().or_fail()?;

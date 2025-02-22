@@ -21,7 +21,7 @@ impl CommandEditorWidget {
         10
     }
 
-    pub fn handle_focus_change(&mut self, state: &mut AppState) {
+    pub fn handle_focus_change(&mut self, state: &mut AppState) -> orfail::Result<()> {
         let columns = self.available_columns(state);
         let offset = 8; // TODO: const
         let mut row = 1;
@@ -35,10 +35,15 @@ impl CommandEditorWidget {
             }
             col += token_width;
             match (arg.kind, state.focus) {
-                (GrepArgKind::Pattern, Focus::Pattern) => {
+                (GrepArgKind::Pattern, Focus::Pattern)
+                | (GrepArgKind::AndPattern, Focus::AndPattern)
+                | (GrepArgKind::NotPattern, Focus::NotPattern)
+                | (GrepArgKind::Revision, Focus::Revision)
+                | (GrepArgKind::Path, Focus::Path) => {
+                    let arg = state.focused_arg_mut().or_fail()?;
+                    self.original_text = arg.text.clone();
+                    self.index = arg.len();
                     state.show_terminal_cursor = Some(TokenPosition::row_col(row, col));
-                    self.original_text = state.grep.pattern.text.clone();
-                    self.index = state.grep.pattern.len();
                     break;
                 }
                 _ => {}
@@ -46,6 +51,7 @@ impl CommandEditorWidget {
         }
 
         state.dirty = true;
+        Ok(())
     }
 
     pub fn handle_key_event(
@@ -66,12 +72,8 @@ impl CommandEditorWidget {
                 state.dirty = true;
             }
             (true, KeyCode::Char('g')) => {
-                match state.focus {
-                    Focus::Pattern => {
-                        state.grep.pattern.text = self.original_text.clone();
-                    }
-                    _ => {}
-                }
+                let arg = state.focused_arg_mut().or_fail()?;
+                arg.text = self.original_text.clone();
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
                 state.dirty = true;
