@@ -96,7 +96,7 @@ impl App {
 
         let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
         match event.code {
-            KeyCode::Char('q') if self.widgets.len() == 1 => {
+            KeyCode::Char('q') if matches!(self.state.focus, Focus::SearchResult) => {
                 self.exit = true;
             }
             KeyCode::Esc => {
@@ -105,7 +105,7 @@ impl App {
             KeyCode::Char('c') if ctrl => {
                 self.exit = true;
             }
-            KeyCode::Char('h') => {
+            KeyCode::Char('h') if matches!(self.state.focus, Focus::SearchResult) => {
                 self.legend.hide = !self.legend.hide;
                 self.state.dirty = true;
             }

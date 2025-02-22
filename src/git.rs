@@ -201,6 +201,7 @@ impl GrepOptions {
         SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
     }
 
+    // TODO: s/String/GrepArg/ for escape handling
     fn build_grep_args(&self, mode: Mode) -> Vec<(GrepArgKind, String)> {
         let mut args = vec![GrepArgKind::other("grep")];
 

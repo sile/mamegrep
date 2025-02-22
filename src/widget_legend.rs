@@ -14,17 +14,22 @@ impl LegendWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         canvas.set_cursor(TokenPosition::row(0));
 
+        let editing = !matches!(state.focus, Focus::SearchResult);
         if self.hide {
             let col = canvas.frame_size().cols - 11;
             canvas.set_col_offset(col);
-            canvas.drawln(Token::new("+- s(h)ow -"));
+            if editing {
+                canvas.drawln(Token::new("+----------"));
+            } else {
+                canvas.drawln(Token::new("+- s(h)ow -"));
+            }
             return;
         }
 
-        if matches!(state.focus, Focus::SearchResult) {
-            self.render_search_result_legend(state, canvas);
-        } else {
+        if editing {
             self.render_editing_legend(state, canvas);
+        } else {
+            self.render_search_result_legend(state, canvas);
         }
     }
 
@@ -44,13 +49,13 @@ impl LegendWidget {
         canvas.drawln(Token::new("| preview        [TAB]"));
         canvas.drawln(Token::new("| cancel         [C-g]"));
         canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("| (BACKSPACE)    [C-h]"));
+        canvas.drawln(Token::new("| (BACKSPACE)         "));
         canvas.drawln(Token::new("| (DELETE)       [C-d]"));
         canvas.drawln(Token::new("| (←)            [C-b]"));
         canvas.drawln(Token::new("| (→)            [C-f]"));
         canvas.drawln(Token::new("| go to head     [C-a]"));
         canvas.drawln(Token::new("| go to tail     [C-e]"));
-        canvas.drawln(Token::new("+-------(h)ide--------"));
+        canvas.drawln(Token::new("+---------------------"));
     }
 
     fn render_search_result_legend(&self, state: &AppState, canvas: &mut Canvas) {
