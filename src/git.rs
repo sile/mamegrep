@@ -131,6 +131,24 @@ impl GrepArg {
             cursor_index: 0,
         }
     }
+
+    pub fn to_quoted_text(&self) -> String {
+        if !self.text.contains([' ', '\'']) {
+            return self.text.clone();
+        }
+
+        let mut quoted = String::new();
+        quoted.push('\'');
+        for c in self.text.chars() {
+            if c == '\'' {
+                quoted.push_str(r#"'\'"#);
+            } else {
+                quoted.push(c);
+            }
+        }
+        quoted.push('\'');
+        quoted
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
