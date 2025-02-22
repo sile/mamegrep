@@ -123,7 +123,6 @@ impl Default for ContextLines {
 pub struct GrepArg {
     pub kind: GrepArgKind,
     pub text: String, // TODO: private
-    pub cursor_index: usize,
 }
 
 impl GrepArg {
@@ -131,8 +130,15 @@ impl GrepArg {
         Self {
             kind,
             text: text.to_string(),
-            cursor_index: 0,
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.text.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.text.len()
     }
 
     pub fn text(&self, focus: Focus) -> Cow<str> {
@@ -207,13 +213,13 @@ impl GrepArg {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct GrepOptions {
-    pub pattern: String,
-    pub and_pattern: String,
-    pub not_pattern: String,
-    pub revision: String,
-    pub path: String,
+    pub pattern: GrepArg,
+    pub and_pattern: GrepArg,
+    pub not_pattern: GrepArg,
+    pub revision: GrepArg,
+    pub path: GrepArg,
     pub ignore_case: bool,
     pub untracked: bool,
     pub no_index: bool,
@@ -223,6 +229,27 @@ pub struct GrepOptions {
     pub fixed_strings: bool,
     pub perl_regexp: bool,
     pub context_lines: ContextLines,
+}
+
+impl Default for GrepOptions {
+    fn default() -> Self {
+        Self {
+            pattern: GrepArg::pattern(""),
+            and_pattern: GrepArg::and_pattern(""),
+            not_pattern: GrepArg::not_pattern(""),
+            revision: GrepArg::revision(""),
+            path: GrepArg::path(""),
+            ignore_case: false,
+            untracked: false,
+            no_index: false,
+            no_recursive: false,
+            word_regexp: false,
+            extended_regexp: false,
+            fixed_strings: false,
+            perl_regexp: false,
+            context_lines: ContextLines::default(),
+        }
+    }
 }
 
 impl GrepOptions {
@@ -300,28 +327,28 @@ impl GrepOptions {
         if !self.not_pattern.is_empty() || !self.and_pattern.is_empty() {
             args.push(GrepArg::other("-e"));
         }
-        args.push(GrepArg::pattern(&self.pattern));
+        args.push(self.pattern.clone());
 
         if !self.and_pattern.is_empty() {
             args.push(GrepArg::other("--and"));
             args.push(GrepArg::other("-e"));
-            args.push(GrepArg::and_pattern(&self.and_pattern));
+            args.push(self.and_pattern.clone());
         }
         if !self.not_pattern.is_empty() {
             args.push(GrepArg::other("--and"));
             args.push(GrepArg::other("--not"));
             args.push(GrepArg::other("-e"));
-            args.push(GrepArg::not_pattern(&self.not_pattern));
+            args.push(self.not_pattern.clone());
         }
         if !self.revision.is_empty() {
-            args.push(GrepArg::revision(&self.revision));
+            args.push(self.revision.clone());
             if self.path.is_empty() {
                 args.push(GrepArg::other("--"));
             }
         }
         if !self.path.is_empty() {
             args.push(GrepArg::other("--"));
-            args.push(GrepArg::path(&self.path));
+            args.push(self.path.clone());
         }
         args
     }

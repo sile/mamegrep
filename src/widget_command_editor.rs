@@ -37,7 +37,7 @@ impl CommandEditorWidget {
             match (arg.kind, state.focus) {
                 (GrepArgKind::Pattern, Focus::Pattern) => {
                     state.show_terminal_cursor = Some(TokenPosition::row_col(row, col));
-                    self.original_text = state.grep.pattern.clone();
+                    self.original_text = state.grep.pattern.text.clone();
                     self.index = state.grep.pattern.len();
                     break;
                 }
@@ -68,7 +68,7 @@ impl CommandEditorWidget {
             (true, KeyCode::Char('g')) => {
                 match state.focus {
                     Focus::Pattern => {
-                        state.grep.pattern = self.original_text.clone();
+                        state.grep.pattern.text = self.original_text.clone();
                     }
                     _ => {}
                 }

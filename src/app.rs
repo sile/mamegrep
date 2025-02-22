@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    git::{GrepOptions, MatchLine, SearchResult},
+    git::{GrepArg, GrepOptions, MatchLine, SearchResult},
     terminal::Terminal,
     widget_command_editor::CommandEditorWidget,
     widget_legend::LegendWidget,
@@ -171,6 +171,17 @@ pub struct AppState {
 }
 
 impl AppState {
+    pub fn focused_arg_mut(&mut self) -> Option<&mut GrepArg> {
+        match self.focus {
+            Focus::SearchResult => None,
+            Focus::Pattern => Some(&mut self.grep.pattern),
+            Focus::AndPattern => todo!(),
+            Focus::NotPattern => todo!(),
+            Focus::Revision => todo!(),
+            Focus::Path => todo!(),
+        }
+    }
+
     pub fn regrep(&mut self) -> orfail::Result<()> {
         self.search_result = self.grep.call().or_fail()?;
         self.dirty = true;
@@ -410,26 +421,23 @@ impl Widget for MainWidget {
 
     fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
         match event.code {
-            KeyCode::Char('/') if state.focus == Focus::SearchResult => {
+            KeyCode::Char('/' | 'e') if state.focus == Focus::SearchResult => {
                 state.focus = Focus::Pattern;
                 state.dirty = true;
             }
             // TODO:
-            KeyCode::Char('e') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget::Pattern));
-            }
-            KeyCode::Char('a') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget::AndPattern));
-            }
-            KeyCode::Char('n') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget::NotPattern));
-            }
-            KeyCode::Char('r') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget::Revision));
-            }
-            KeyCode::Char('p') => {
-                state.new_widget = Some(Box::new(SearchPatternInputWidget::Path));
-            }
+            // KeyCode::Char('a') => {
+            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::AndPattern));
+            // }
+            // KeyCode::Char('n') => {
+            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::NotPattern));
+            // }
+            // KeyCode::Char('r') => {
+            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::Revision));
+            // }
+            // KeyCode::Char('p') => {
+            //     state.new_widget = Some(Box::new(SearchPatternInputWidget::Path));
+            // }
             KeyCode::Char('i') => {
                 state.grep.ignore_case = !state.grep.ignore_case;
                 state.regrep().or_fail()?;
@@ -662,73 +670,5 @@ impl Cursor {
 
     pub fn is_line_focused(&self, file: &PathBuf, line_number: NonZeroUsize) -> bool {
         self.file.as_ref() == Some(file) && self.line_number == Some(line_number)
-    }
-}
-
-#[derive(Debug)]
-pub enum SearchPatternInputWidget {
-    Pattern,
-    AndPattern,
-    NotPattern,
-    Revision,
-    Path,
-}
-
-impl Widget for SearchPatternInputWidget {
-    fn render(&self, _state: &AppState, _canvas: &mut Canvas) -> orfail::Result<()> {
-        Ok(())
-    }
-
-    fn handle_key_event(&mut self, state: &mut AppState, event: KeyEvent) -> orfail::Result<bool> {
-        // TODO: move to widget
-        match event.code {
-            KeyCode::Enter => {
-                state.regrep().or_fail()?;
-                state.show_terminal_cursor = None;
-                return Ok(false);
-            }
-            KeyCode::Char(c) if !c.is_control() => {
-                match self {
-                    Self::Pattern => {
-                        state.grep.pattern.push(c);
-                    }
-                    Self::AndPattern => {
-                        state.grep.and_pattern.push(c);
-                    }
-                    Self::NotPattern => {
-                        state.grep.not_pattern.push(c);
-                    }
-                    Self::Revision => {
-                        state.grep.revision.push(c);
-                    }
-                    Self::Path => {
-                        state.grep.path.push(c);
-                    }
-                }
-                state.dirty = true;
-            }
-            KeyCode::Backspace => {
-                match self {
-                    Self::Pattern => {
-                        state.grep.pattern.pop();
-                    }
-                    Self::AndPattern => {
-                        state.grep.and_pattern.pop();
-                    }
-                    Self::NotPattern => {
-                        state.grep.not_pattern.pop();
-                    }
-                    Self::Revision => {
-                        state.grep.revision.pop();
-                    }
-                    Self::Path => {
-                        state.grep.path.pop();
-                    }
-                }
-                state.dirty = true;
-            }
-            _ => {}
-        }
-        Ok(true)
     }
 }
