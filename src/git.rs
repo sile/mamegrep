@@ -149,6 +149,11 @@ impl GrepArg {
         self.text[..i].chars().rev().next()
     }
 
+    // TODO: rename
+    pub fn is_enabled(&self, focus: Focus) -> bool {
+        !self.is_empty() || self.kind.is_focused(focus)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.text.is_empty()
     }
@@ -174,7 +179,9 @@ impl GrepArg {
     }
 
     pub fn to_quoted_text(&self) -> Cow<str> {
-        if !self.text.contains([' ', '\'']) {
+        if self.text.is_empty() {
+            return Cow::Borrowed("''");
+        } else if !self.text.contains([' ', '\'']) {
             return Cow::Borrowed(&self.text);
         }
 
@@ -200,6 +207,19 @@ pub enum GrepArgKind {
     Revision,
     Path,
     Other,
+}
+
+impl GrepArgKind {
+    pub fn is_focused(self, focus: Focus) -> bool {
+        match (self, focus) {
+            (Self::Pattern, Focus::Pattern)
+            | (Self::AndPattern, Focus::AndPattern)
+            | (Self::NotPattern, Focus::NotPattern)
+            | (Self::Revision, Focus::Revision)
+            | (Self::Path, Focus::Path) => true,
+            _ => false,
+        }
+    }
 }
 
 // TODO: move
@@ -269,15 +289,15 @@ impl Default for GrepOptions {
 }
 
 impl GrepOptions {
-    pub fn args(&self) -> Vec<GrepArg> {
-        self.build_grep_args(Mode::External)
+    pub fn args(&self, focus: Focus) -> Vec<GrepArg> {
+        self.build_grep_args(Mode::External, focus)
     }
 
     pub fn command_string(&self) -> String {
         // TODO: remove "$ "
         format!(
             "$ git {}",
-            self.build_grep_args(Mode::External)
+            self.build_grep_args(Mode::External, Focus::SearchResult)
                 .into_iter()
                 .map(|x| x.to_quoted_text().into_owned())
                 .collect::<Vec<_>>()
@@ -287,20 +307,19 @@ impl GrepOptions {
 
     pub fn call(&self) -> orfail::Result<SearchResult> {
         // TODO: Execute in parallel.
-        let args = self.build_grep_args(Mode::Highlight);
+        let args = self.build_grep_args(Mode::Highlight, Focus::SearchResult);
         let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
         let highlight = Highlight::parse(&output).or_fail()?;
 
-        let args = self.build_grep_args(Mode::Parsing);
+        let args = self.build_grep_args(Mode::Parsing, Focus::SearchResult);
         let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
 
         SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
     }
 
-    // TODO: s/String/GrepArg/ for escape handling
-    fn build_grep_args(&self, mode: Mode) -> Vec<GrepArg> {
+    fn build_grep_args(&self, mode: Mode, focus: Focus) -> Vec<GrepArg> {
         let mut args = vec![GrepArg::other("grep")];
 
         let mut flags = "-nI".to_string();
@@ -340,29 +359,29 @@ impl GrepOptions {
             args.push(GrepArg::other("--heading"));
         }
 
-        if !self.not_pattern.is_empty() || !self.and_pattern.is_empty() {
+        if self.not_pattern.is_enabled(focus) || self.and_pattern.is_enabled(focus) {
             args.push(GrepArg::other("-e"));
         }
         args.push(self.pattern.clone());
 
-        if !self.and_pattern.is_empty() {
+        if self.and_pattern.is_enabled(focus) {
             args.push(GrepArg::other("--and"));
             args.push(GrepArg::other("-e"));
             args.push(self.and_pattern.clone());
         }
-        if !self.not_pattern.is_empty() {
+        if self.not_pattern.is_enabled(focus) {
             args.push(GrepArg::other("--and"));
             args.push(GrepArg::other("--not"));
             args.push(GrepArg::other("-e"));
             args.push(self.not_pattern.clone());
         }
-        if !self.revision.is_empty() {
+        if self.revision.is_enabled(focus) {
             args.push(self.revision.clone());
-            if self.path.is_empty() {
+            if !self.path.is_enabled(focus) {
                 args.push(GrepArg::other("--"));
             }
         }
-        if !self.path.is_empty() {
+        if self.path.is_enabled(focus) {
             args.push(GrepArg::other("--"));
             args.push(self.path.clone());
         }

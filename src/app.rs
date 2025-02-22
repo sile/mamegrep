@@ -153,7 +153,7 @@ impl App {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Focus {
     #[default]
-    SearchResult,
+    SearchResult, // TODO: rename
     Pattern,
     AndPattern,
     NotPattern,

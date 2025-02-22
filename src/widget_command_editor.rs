@@ -26,7 +26,7 @@ impl CommandEditorWidget {
         let offset = 8; // TODO: const
         let mut row = 1;
         let mut col = offset;
-        for arg in state.grep.args() {
+        for arg in state.grep.args(state.focus) {
             let is_head_arg = offset == col;
             let token_width = arg.width(state.focus) + 1; // +1 for ' '
             if !is_head_arg && offset + token_width > columns {
@@ -161,7 +161,7 @@ impl CommandEditorWidget {
             canvas.draw(Token::new("   "));
         }
         canvas.draw(Token::new("$ git"));
-        self.render_grep_args(&state.grep.args(), canvas, state);
+        self.render_grep_args(&state.grep.args(state.focus), canvas, state);
         canvas.newline();
     }
 
