@@ -5,8 +5,6 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::app::Focus;
 
-pub const DEFAULT_CONTEXT_LINES: usize = 4;
-
 #[derive(Debug)]
 enum Mode {
     External,
@@ -115,7 +113,7 @@ pub struct ContextLines(pub usize);
 
 impl Default for ContextLines {
     fn default() -> Self {
-        Self(DEFAULT_CONTEXT_LINES)
+        Self(4)
     }
 }
 
@@ -180,7 +178,7 @@ impl GrepArg {
         self.maybe_quoted_text(focus).width()
     }
 
-    fn quoted_text(&self) -> Cow<str> {
+    pub fn quoted_text(&self) -> Cow<str> {
         if self.text.is_empty() {
             return Cow::Borrowed("''");
         } else if !self.text.contains([
@@ -278,30 +276,32 @@ impl GrepOptions {
         self.build_grep_args(Mode::External, focus)
     }
 
-    pub fn command_string(&self) -> String {
-        // TODO: remove "$ "
-        format!(
-            "$ git {}",
-            self.build_grep_args(Mode::External, Focus::SearchResult)
-                .into_iter()
-                .map(|x| x.quoted_text().into_owned())
-                .collect::<Vec<_>>()
-                .join(" ")
-        )
-    }
-
     pub fn call(&self) -> orfail::Result<SearchResult> {
-        // TODO: Execute in parallel.
-        let args = self.build_grep_args(Mode::Highlight, Focus::SearchResult);
-        let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
-        let output = call(&args, false).or_fail()?;
-        let highlight = Highlight::parse(&output).or_fail()?;
+        std::thread::scope(|s| {
+            let handle0 = s.spawn(|| {
+                let args = self.build_grep_args(Mode::Highlight, Focus::SearchResult);
+                let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
+                let output = call(&args, false).or_fail()?;
+                Highlight::parse(&output).or_fail()
+            });
+            let handle1 = s.spawn(|| {
+                let args = self.build_grep_args(Mode::Parsing, Focus::SearchResult);
+                let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
+                let output = call(&args, false).or_fail()?;
+                SearchResult::parse(&output, Highlight::default(), self.context_lines.0).or_fail()
+            });
 
-        let args = self.build_grep_args(Mode::Parsing, Focus::SearchResult);
-        let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
-        let output = call(&args, false).or_fail()?;
-
-        SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
+            let highlight = handle0
+                .join()
+                .unwrap_or_else(|e| std::panic::resume_unwind(e))
+                .or_fail()?;
+            let mut search_result = handle1
+                .join()
+                .unwrap_or_else(|e| std::panic::resume_unwind(e))
+                .or_fail()?;
+            search_result.highlight = highlight;
+            Ok(search_result)
+        })
     }
 
     fn build_grep_args(&self, mode: Mode, focus: Focus) -> Vec<GrepArg> {
