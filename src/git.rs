@@ -181,7 +181,9 @@ impl GrepArg {
     pub fn to_quoted_text(&self) -> Cow<str> {
         if self.text.is_empty() {
             return Cow::Borrowed("''");
-        } else if !self.text.contains([' ', '\'']) {
+        } else if !self.text.contains([
+            ' ', '\'', '$', '|', '&', '(', ')', '>', '<', '*', '?', '!', ';', '\\', '"',
+        ]) {
             return Cow::Borrowed(&self.text);
         }
 
@@ -308,12 +310,12 @@ impl GrepOptions {
     pub fn call(&self) -> orfail::Result<SearchResult> {
         // TODO: Execute in parallel.
         let args = self.build_grep_args(Mode::Highlight, Focus::SearchResult);
-        let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
         let highlight = Highlight::parse(&output).or_fail()?;
 
         let args = self.build_grep_args(Mode::Parsing, Focus::SearchResult);
-        let args = args.iter().map(|s| s.to_quoted_text()).collect::<Vec<_>>();
+        let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
         let output = call(&args, false).or_fail()?;
 
         SearchResult::parse(&output, highlight, self.context_lines.0).or_fail()
@@ -397,30 +399,16 @@ pub fn is_available() -> bool {
         .is_some()
 }
 
-fn call<S>(args: &[S], check_status: bool) -> orfail::Result<String>
-where
-    S: AsRef<str>,
-{
+fn call(args: &[&str], check_status: bool) -> orfail::Result<String> {
     let output = Command::new("git")
-        .args(args.iter().map(|a| a.as_ref()))
+        .args(args)
         .output()
-        .or_fail_with(|e| {
-            format!(
-                "Failed to execute `$ git {}`: {e}",
-                args.iter()
-                    .map(|a| a.as_ref())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            )
-        })?;
+        .or_fail_with(|e| format!("Failed to execute `$ git {}`: {e}", args.join(" ")))?;
 
     let error = |()| {
         format!(
             "Failed to execute `$ git {}`:\n{}\n",
-            args.iter()
-                .map(|a| a.as_ref())
-                .collect::<Vec<_>>()
-                .join(" "),
+            args.join(" "), // TODO: use quoted arg here
             String::from_utf8_lossy(&output.stderr)
         )
     };

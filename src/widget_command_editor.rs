@@ -170,15 +170,23 @@ impl CommandEditorWidget {
         let offset = canvas.cursor().col;
         for arg in args {
             let is_head_arg = offset == canvas.cursor().col;
-            // TODO: consider ' ' prefix
-            if !is_head_arg && offset + arg.width(state.focus) > columns {
+            let width = arg.width(state.focus) + 1; // +1 for ' ' prefix
+            if !is_head_arg && offset + width > columns {
                 canvas.newline();
 
                 let mut cursor = canvas.cursor();
                 cursor.col = offset;
                 canvas.set_cursor(cursor);
             }
-            canvas.draw(Token::new(format!(" {}", arg.text(state.focus))));
+            let style = if arg.kind.is_focused(state.focus) {
+                TokenStyle::Bold
+            } else {
+                TokenStyle::Plain
+            };
+            canvas.draw(Token::with_style(
+                format!(" {}", arg.text(state.focus)),
+                style,
+            ));
         }
     }
 }
