@@ -1,11 +1,11 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
-use unicode_width::UnicodeWidthChar;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::{
     app::{AppState, Focus},
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    git::{GrepArg, GrepArgKind},
+    git::GrepArg,
 };
 
 #[derive(Debug, Default)]
@@ -15,43 +15,15 @@ pub struct CommandEditorWidget {
 }
 
 impl CommandEditorWidget {
+    const ROW_OFFSET: usize = 1;
+    const COL_OFFSET: usize = "-> $ git ".len();
+    const START_POSITION: TokenPosition =
+        TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
+
     fn available_columns(&self, _state: &AppState) -> usize {
         // TODO: use terminal size columns
         // TODO: use canvas.size().columns
         10
-    }
-
-    pub fn handle_focus_change(&mut self, state: &mut AppState) -> orfail::Result<()> {
-        let columns = self.available_columns(state);
-        let offset = 8; // TODO: const
-        let mut row = 1;
-        let mut col = offset;
-        for arg in state.grep.args(state.focus) {
-            let is_head_arg = offset == col;
-            let token_width = arg.width(state.focus) + 1; // +1 for ' '
-            if !is_head_arg && offset + token_width > columns {
-                row += 1;
-                col = offset;
-            }
-            col += token_width;
-            match (arg.kind, state.focus) {
-                (GrepArgKind::Pattern, Focus::Pattern)
-                | (GrepArgKind::AndPattern, Focus::AndPattern)
-                | (GrepArgKind::NotPattern, Focus::NotPattern)
-                | (GrepArgKind::Revision, Focus::Revision)
-                | (GrepArgKind::Path, Focus::Path) => {
-                    let arg = state.focused_arg_mut().or_fail()?;
-                    self.original_text = arg.text.clone();
-                    self.index = arg.len();
-                    state.show_terminal_cursor = Some(TokenPosition::row_col(row, col));
-                    break;
-                }
-                _ => {}
-            }
-        }
-
-        state.dirty = true;
-        Ok(())
     }
 
     pub fn handle_key_event(
@@ -147,6 +119,9 @@ impl CommandEditorWidget {
             }
             _ => {}
         }
+        if state.dirty {
+            self.update_cursor_position(state);
+        }
         Ok(())
     }
 
@@ -167,16 +142,12 @@ impl CommandEditorWidget {
 
     fn render_grep_args(&self, args: &[GrepArg], canvas: &mut Canvas, state: &AppState) {
         let columns = self.available_columns(state);
-        let offset = canvas.cursor().col;
-        for arg in args {
-            let is_head_arg = offset == canvas.cursor().col;
+        for (i, arg) in args.iter().enumerate() {
+            // TODO: arg group
             let width = arg.width(state.focus) + 1; // +1 for ' ' prefix
-            if !is_head_arg && offset + width > columns {
+            if i > 0 && Self::COL_OFFSET + width > columns {
                 canvas.newline();
-
-                let mut cursor = canvas.cursor();
-                cursor.col = offset;
-                canvas.set_cursor(cursor);
+                canvas.set_cursor_col(Self::COL_OFFSET);
             }
             let style = if arg.kind.is_focused(state.focus) {
                 TokenStyle::Bold
@@ -188,5 +159,35 @@ impl CommandEditorWidget {
                 style,
             ));
         }
+    }
+
+    fn update_cursor_position(&self, state: &mut AppState) {
+        let columns = self.available_columns(state);
+        let mut pos = Self::START_POSITION;
+        for (i, arg) in state.grep.args(state.focus).into_iter().enumerate() {
+            let focused = arg.kind.is_focused(state.focus);
+            // TODO: arg group
+            let width = arg.width(state.focus) + 1; // +1 for ' '
+            if i > 0 && Self::COL_OFFSET + width > columns {
+                pos.row += 1;
+                pos.col = Self::COL_OFFSET;
+            }
+            if focused {
+                pos.col += arg.text[0..self.index].width() + 1; // +1 for cursor
+                state.show_terminal_cursor = Some(pos);
+                return;
+            }
+            pos.col += width;
+        }
+    }
+
+    pub fn handle_focus_change(&mut self, state: &mut AppState) {
+        let Some(arg) = state.focused_arg_mut() else {
+            return;
+        };
+        self.original_text = arg.text.clone();
+        self.index = arg.len();
+        self.update_cursor_position(state);
+        state.dirty = true;
     }
 }

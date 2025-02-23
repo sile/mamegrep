@@ -128,9 +128,7 @@ impl App {
                 }
 
                 if old_focus != self.state.focus {
-                    self.command_editor
-                        .handle_focus_change(&mut self.state)
-                        .or_fail()?;
+                    self.command_editor.handle_focus_change(&mut self.state);
                 }
             }
         }

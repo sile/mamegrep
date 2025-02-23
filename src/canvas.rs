@@ -45,6 +45,10 @@ impl Canvas {
         self.cursor = position;
     }
 
+    pub fn set_cursor_col(&mut self, col: usize) {
+        self.cursor.col = col;
+    }
+
     pub fn set_col_offset(&mut self, offset: usize) {
         self.col_offset = offset;
     }
@@ -257,7 +261,7 @@ impl TokenPosition {
         Self::row_col(row, 0)
     }
 
-    pub fn row_col(row: usize, col: usize) -> Self {
+    pub const fn row_col(row: usize, col: usize) -> Self {
         Self { row, col }
     }
 }
