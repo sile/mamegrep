@@ -60,7 +60,7 @@ impl LegendWidget {
         canvas.drawln(Token::new("| preview        [TAB]"));
         canvas.drawln(Token::new("| cancel         [C-g]"));
         canvas.drawln(Token::new("|                     "));
-        canvas.drawln(Token::new("| (BACKSPACE)         "));
+        canvas.drawln(Token::new("| (BACKSPACE)    [C-h]"));
         canvas.drawln(Token::new("| (DELETE)       [C-d]"));
         canvas.drawln(Token::new("| (←)            [C-b]"));
         canvas.drawln(Token::new("| (→)            [C-f]"));

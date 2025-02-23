@@ -62,7 +62,7 @@ impl CommandEditorWidget {
                 self.index += c.len_utf8();
                 state.dirty = true;
             }
-            (false, KeyCode::Backspace) => {
+            (false, KeyCode::Backspace) | (true, KeyCode::Char('h')) => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {
                     self.index -= c.len_utf8();
