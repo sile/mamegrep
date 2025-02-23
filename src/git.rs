@@ -123,6 +123,7 @@ impl Default for ContextLines {
 pub struct GrepArg {
     pub kind: GrepArgKind,
     pub text: String, // TODO: private
+    pub line_breakable: bool,
 }
 
 impl GrepArg {
@@ -130,7 +131,13 @@ impl GrepArg {
         Self {
             kind,
             text: text.to_string(),
+            line_breakable: false,
         }
+    }
+
+    pub fn line_breakable(mut self) -> Self {
+        self.line_breakable = true;
+        self
     }
 
     pub fn insert(&mut self, i: usize, c: char) {
@@ -362,29 +369,31 @@ impl GrepOptions {
         }
 
         if self.not_pattern.is_enabled(focus) || self.and_pattern.is_enabled(focus) {
-            args.push(GrepArg::other("-e"));
+            args.push(GrepArg::other("-e").line_breakable());
+            args.push(self.pattern.clone());
+        } else {
+            args.push(self.pattern.clone().line_breakable());
         }
-        args.push(self.pattern.clone());
 
         if self.and_pattern.is_enabled(focus) {
-            args.push(GrepArg::other("--and"));
+            args.push(GrepArg::other("--and").line_breakable());
             args.push(GrepArg::other("-e"));
             args.push(self.and_pattern.clone());
         }
         if self.not_pattern.is_enabled(focus) {
-            args.push(GrepArg::other("--and"));
+            args.push(GrepArg::other("--and").line_breakable());
             args.push(GrepArg::other("--not"));
             args.push(GrepArg::other("-e"));
             args.push(self.not_pattern.clone());
         }
         if self.revision.is_enabled(focus) {
-            args.push(self.revision.clone());
+            args.push(self.revision.clone().line_breakable());
             if !self.path.is_enabled(focus) {
                 args.push(GrepArg::other("--"));
             }
         }
         if self.path.is_enabled(focus) {
-            args.push(GrepArg::other("--"));
+            args.push(GrepArg::other("--").line_breakable());
             args.push(self.path.clone());
         }
         args

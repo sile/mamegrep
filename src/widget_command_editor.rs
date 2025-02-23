@@ -122,12 +122,11 @@ impl CommandEditorWidget {
 
     fn render_grep_args(&self, state: &AppState, canvas: &mut Canvas, args: &[GrepArg]) {
         let columns = self.available_columns(state);
-        for (i, arg) in args.iter().enumerate() {
-            // TODO: arg group
+        for arg in args {
             let width = arg.width(state.focus) + 1; // +1 for ' ' prefix
-            if i > 0 && Self::COL_OFFSET + width > columns {
+            if arg.line_breakable && Self::COL_OFFSET + width > columns {
                 canvas.newline();
-                canvas.set_cursor_col(Self::COL_OFFSET);
+                canvas.set_cursor_col(Self::COL_OFFSET - 1);
             }
             let style = if arg.kind.is_focused(state.focus) {
                 TokenStyle::Bold
@@ -150,16 +149,15 @@ impl CommandEditorWidget {
 
         let columns = self.available_columns(state);
         let mut pos = Self::START_POSITION;
-        for (i, arg) in state.grep.args(state.focus).into_iter().enumerate() {
+        for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
-            // TODO: arg group
             let width = arg.width(state.focus) + 1; // +1 for ' '
-            if i > 0 && Self::COL_OFFSET + width > columns {
+            if arg.line_breakable && Self::COL_OFFSET + width > columns {
                 pos.row += 1;
                 pos.col = Self::COL_OFFSET;
             }
             if focused {
-                pos.col += arg.text[0..self.index].width() + 1; // +1 for cursor
+                pos.col += arg.text[0..self.index].width();
                 state.show_terminal_cursor = Some(pos);
                 return;
             }
