@@ -21,7 +21,6 @@ use orfail::OrFail;
 pub struct App {
     terminal: Terminal,
     exit: bool,
-    frame_row_start: usize,
     state: AppState,
     widgets: Vec<Box<dyn 'static + Widget>>,
     legend: LegendWidget,
@@ -35,7 +34,6 @@ impl App {
         Ok(Self {
             terminal,
             exit: false,
-            frame_row_start: 0,
             state: AppState::default(),
             widgets: vec![Box::new(MainWidget {
                 tree: Tree::default(),
@@ -68,7 +66,7 @@ impl App {
         self.command_editor
             .set_available_cols(self.legend.remaining_cols(self.terminal.size()));
 
-        let mut canvas = Canvas::new(self.frame_row_start, self.terminal.size());
+        let mut canvas = Canvas::new(0, self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
         for widget in &self.widgets {
             widget.render(&self.state, &mut canvas).or_fail()?;
