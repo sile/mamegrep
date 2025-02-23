@@ -47,6 +47,10 @@ pub struct SearchResult {
 }
 
 impl SearchResult {
+    pub fn is_empty(&self) -> bool {
+        self.files.is_empty()
+    }
+
     fn parse(s: &str, highlight: Highlight, context_lines: usize) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
@@ -277,6 +281,10 @@ impl GrepOptions {
     }
 
     pub fn call(&self) -> orfail::Result<SearchResult> {
+        if self.pattern.is_empty() {
+            return Ok(SearchResult::default());
+        }
+
         std::thread::scope(|s| {
             let handle0 = s.spawn(|| {
                 let args = self.build_grep_args(Mode::Highlight, Focus::SearchResult);

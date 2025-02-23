@@ -185,6 +185,31 @@ pub struct AppState {
 }
 
 impl AppState {
+    pub fn can_scroll(&self) -> bool {
+        // TODO
+        !self.search_result.is_empty()
+    }
+
+    pub fn can_cursor_up(&self) -> bool {
+        if self.cursor.is_file_level() {
+            self.peek_cursor_up_file().is_some()
+        } else if self.cursor.is_line_level() {
+            self.peek_cursor_up_line().is_some()
+        } else {
+            false
+        }
+    }
+
+    pub fn can_cursor_down(&self) -> bool {
+        if self.cursor.is_file_level() {
+            self.peek_cursor_down_file().is_some()
+        } else if self.cursor.is_line_level() {
+            self.peek_cursor_down_line().is_some()
+        } else {
+            false
+        }
+    }
+
     pub fn focused_arg_mut(&mut self) -> Option<&mut GrepArg> {
         match self.focus {
             Focus::SearchResult => None,
@@ -250,19 +275,25 @@ impl AppState {
         }
     }
 
-    fn cursor_up_file(&mut self) {
+    fn peek_cursor_up_file(&self) -> Option<&PathBuf> {
         let file = self.cursor.file.as_ref().expect("infallible");
-        let new = self
-            .search_result
+        self.search_result
             .files
             .range::<PathBuf, RangeTo<_>>(..file)
             .rev()
             .next()
-            .map(|(k, _)| k.clone());
-        if new.is_some() {
-            self.cursor.file = new;
+            .map(|(k, _)| k)
+    }
+
+    fn cursor_up_file(&mut self) {
+        if let Some(new) = self.peek_cursor_up_file().cloned() {
+            self.cursor.file = Some(new);
             self.dirty = true;
         }
+    }
+
+    fn peek_cursor_up_line(&self) -> Option<usize> {
+        Some(0) // TODO
     }
 
     fn cursor_up_line(&mut self) {
@@ -309,6 +340,10 @@ impl AppState {
         }
     }
 
+    fn peek_cursor_down_line(&self) -> Option<usize> {
+        Some(0) // TODO
+    }
+
     fn cursor_down_line(&mut self) {
         let file = self.cursor.file.as_ref().expect("infallible");
         let line_number = self.cursor.line_number.expect("infallible");
@@ -337,16 +372,18 @@ impl AppState {
         }
     }
 
-    fn cursor_down_file(&mut self) {
+    fn peek_cursor_down_file(&self) -> Option<&PathBuf> {
         let file = self.cursor.file.as_ref().expect("infallible");
-        let new = self
-            .search_result
+        self.search_result
             .files
             .range::<PathBuf, RangeFrom<_>>(file..)
             .nth(1)
-            .map(|(k, _)| k.clone());
-        if new.is_some() {
-            self.cursor.file = new;
+            .map(|(k, _)| k)
+    }
+
+    fn cursor_down_file(&mut self) {
+        if let Some(new) = self.peek_cursor_down_file().cloned() {
+            self.cursor.file = Some(new);
             self.dirty = true;
         }
     }

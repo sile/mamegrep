@@ -80,6 +80,9 @@ impl LegendWidget {
             TokenStyle::Bold,
         ));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
+        if state.can_scroll() {
+            canvas.drawln(Token::new("| recenter     [l,C-l]"));
+        }
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| (e)dit pattern   [/]"));
         canvas.drawln(Token::new("| edit (a)nd pattern  "));
@@ -92,20 +95,27 @@ impl LegendWidget {
             canvas.drawln(Token::new("| (t)oggle       [TAB]"));
             canvas.drawln(Token::new("| (T)oggle all        "));
         }
-        // TODO: conditional
-        canvas.drawln(Token::new("| (↑)            [C-p]"));
-        canvas.drawln(Token::new("| (↓)            [C-n]"));
+        if state.can_cursor_up() {
+            canvas.drawln(Token::new("| (↑)            [C-p]"));
+        }
+        if state.can_cursor_down() {
+            canvas.drawln(Token::new("| (↓)            [C-n]"));
+        }
         if state.cursor.is_line_level() {
             canvas.drawln(Token::new("| (←)            [C-b]"));
         }
         if state.cursor.is_file_level() {
             canvas.drawln(Token::new("| (→)            [C-f]"));
         }
-        canvas.drawln(Token::new("| (+|-) context lines "));
-        canvas.drawln(Token::new(format!(
-            "|                ({:2}) ",
-            state.grep.context_lines.0
-        )));
+        if state.cursor.is_line_level() {
+            canvas.drawln(Token::new("| (+|-) context lines "));
+            canvas.drawln(Token::new(format!(
+                "|                ({:2}) ",
+                state.grep.context_lines.0
+            )));
+        } else if !state.search_result.is_empty() {
+            canvas.drawln(Token::new("|                     "));
+        }
 
         canvas.drawln(Token::with_style(
             "|[GIT GREP FLAGS]     ",
