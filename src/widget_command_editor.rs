@@ -18,8 +18,6 @@ pub struct CommandEditorWidget {
 impl CommandEditorWidget {
     const ROW_OFFSET: usize = 1;
     const COL_OFFSET: usize = "-> $ git".len();
-    const START_POSITION: TokenPosition =
-        TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
 
     pub fn set_available_cols(&mut self, cols: usize) {
         self.available_cols = cols;
@@ -148,7 +146,7 @@ impl CommandEditorWidget {
         }
 
         let multiline = self.is_multiline(state);
-        let mut pos = Self::START_POSITION;
+        let mut pos = TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
         for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
             if multiline && arg.line_breakable {
