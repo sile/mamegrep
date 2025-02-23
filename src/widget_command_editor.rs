@@ -122,7 +122,7 @@ impl CommandEditorWidget {
         let multiline = self.is_multiline(state);
         for arg in args {
             let focused = arg.kind.is_focused(state.focus);
-            if multiline && arg.line_breakable {
+            if multiline && arg.multiline_head {
                 canvas.newline();
                 canvas.set_cursor_col(Self::COL_OFFSET);
             }
@@ -132,7 +132,7 @@ impl CommandEditorWidget {
                 TokenStyle::Plain
             };
             canvas.draw(Token::with_style(
-                format!(" {}", arg.text(state.focus)),
+                format!(" {}", arg.maybe_quoted_text(state.focus)),
                 style,
             ));
         }
@@ -149,7 +149,7 @@ impl CommandEditorWidget {
         let mut pos = TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
         for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
-            if multiline && arg.line_breakable {
+            if multiline && arg.multiline_head {
                 pos.row += 1;
                 pos.col = Self::COL_OFFSET;
             }

@@ -122,21 +122,21 @@ impl Default for ContextLines {
 #[derive(Debug, Clone)]
 pub struct GrepArg {
     pub kind: GrepArgKind,
-    pub text: String, // TODO: private
-    pub line_breakable: bool,
+    pub text: String,
+    pub multiline_head: bool,
 }
 
 impl GrepArg {
-    pub fn new(kind: GrepArgKind, text: &str) -> Self {
+    fn new(kind: GrepArgKind) -> Self {
         Self {
             kind,
-            text: text.to_string(),
-            line_breakable: false,
+            text: String::new(),
+            multiline_head: false,
         }
     }
 
-    pub fn line_breakable(mut self) -> Self {
-        self.line_breakable = true;
+    fn line_breakable(mut self) -> Self {
+        self.multiline_head = true;
         self
     }
 
@@ -156,7 +156,6 @@ impl GrepArg {
         self.text[..i].chars().rev().next()
     }
 
-    // TODO: rename
     pub fn is_enabled(&self, focus: Focus) -> bool {
         !self.is_empty() || self.kind.is_focused(focus)
     }
@@ -169,23 +168,19 @@ impl GrepArg {
         self.text.len()
     }
 
-    pub fn text(&self, focus: Focus) -> Cow<str> {
-        match (self.kind, focus) {
-            (GrepArgKind::Pattern, Focus::Pattern)
-            | (GrepArgKind::AndPattern, Focus::AndPattern)
-            | (GrepArgKind::NotPattern, Focus::NotPattern)
-            | (GrepArgKind::Path, Focus::Path)
-            | (GrepArgKind::Revision, Focus::Revision)
-            | (GrepArgKind::Other, _) => Cow::Borrowed(&self.text),
-            _ => self.to_quoted_text(),
+    pub fn maybe_quoted_text(&self, focus: Focus) -> Cow<str> {
+        if self.kind.is_focused(focus) || self.kind == GrepArgKind::Other {
+            Cow::Borrowed(&self.text)
+        } else {
+            self.quoted_text()
         }
     }
 
     pub fn width(&self, focus: Focus) -> usize {
-        self.text(focus).width()
+        self.maybe_quoted_text(focus).width()
     }
 
-    pub fn to_quoted_text(&self) -> Cow<str> {
+    fn quoted_text(&self) -> Cow<str> {
         if self.text.is_empty() {
             return Cow::Borrowed("''");
         } else if !self.text.contains([
@@ -205,6 +200,14 @@ impl GrepArg {
         }
         quoted.push('\'');
         Cow::Owned(quoted)
+    }
+
+    fn other(s: &str) -> Self {
+        Self {
+            kind: GrepArgKind::Other,
+            text: s.to_string(),
+            multiline_head: false,
+        }
     }
 }
 
@@ -231,33 +234,6 @@ impl GrepArgKind {
     }
 }
 
-// TODO: move
-impl GrepArg {
-    fn other(s: &str) -> Self {
-        Self::new(GrepArgKind::Other, s)
-    }
-
-    fn pattern(s: &str) -> Self {
-        Self::new(GrepArgKind::Pattern, s)
-    }
-
-    fn and_pattern(s: &str) -> Self {
-        Self::new(GrepArgKind::AndPattern, s)
-    }
-
-    fn not_pattern(s: &str) -> Self {
-        Self::new(GrepArgKind::NotPattern, s)
-    }
-
-    fn revision(s: &str) -> Self {
-        Self::new(GrepArgKind::Revision, s)
-    }
-
-    fn path(s: &str) -> Self {
-        Self::new(GrepArgKind::Path, s)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct GrepOptions {
     pub pattern: GrepArg,
@@ -279,11 +255,11 @@ pub struct GrepOptions {
 impl Default for GrepOptions {
     fn default() -> Self {
         Self {
-            pattern: GrepArg::pattern(""),
-            and_pattern: GrepArg::and_pattern(""),
-            not_pattern: GrepArg::not_pattern(""),
-            revision: GrepArg::revision(""),
-            path: GrepArg::path(""),
+            pattern: GrepArg::new(GrepArgKind::Pattern),
+            and_pattern: GrepArg::new(GrepArgKind::AndPattern),
+            not_pattern: GrepArg::new(GrepArgKind::NotPattern),
+            revision: GrepArg::new(GrepArgKind::Revision),
+            path: GrepArg::new(GrepArgKind::Path),
             ignore_case: false,
             untracked: false,
             no_index: false,
@@ -308,7 +284,7 @@ impl GrepOptions {
             "$ git {}",
             self.build_grep_args(Mode::External, Focus::SearchResult)
                 .into_iter()
-                .map(|x| x.to_quoted_text().into_owned())
+                .map(|x| x.quoted_text().into_owned())
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -409,15 +385,15 @@ pub fn is_available() -> bool {
 }
 
 fn call(args: &[&str], check_status: bool) -> orfail::Result<String> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    let output = command
         .args(args)
         .output()
-        .or_fail_with(|e| format!("Failed to execute `$ git {}`: {e}", args.join(" ")))?;
+        .or_fail_with(|e| format!("Failed to execute `$ {command:?}`: {e}"))?;
 
     let error = |()| {
         format!(
-            "Failed to execute `$ git {}`:\n{}\n",
-            args.join(" "), // TODO: use quoted arg here
+            "Failed to execute `$ {command:?}`:\n{}\n",
             String::from_utf8_lossy(&output.stderr)
         )
     };
@@ -437,7 +413,7 @@ mod tests {
 315:        line.draw_token(2, Token::new("foo"));
 316:        assert_eq!(line.text(), "  foo");
 "#;
-        let result = SearchResult::parse(&output, Highlight::default()).or_fail()?;
+        let result = SearchResult::parse(&output, Highlight::default(), 3).or_fail()?;
         assert_eq!(result.files.len(), 1);
 
         let lines = result
