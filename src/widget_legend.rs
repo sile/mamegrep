@@ -1,6 +1,7 @@
 use crate::{
-    app::{AppState, Focus},
+    app::AppState,
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
+    terminal::TerminalSize,
 };
 
 #[derive(Debug, Default)]
@@ -9,12 +10,25 @@ pub struct LegendWidget {
 }
 
 impl LegendWidget {
-    pub const COLUMNS: usize = 22;
+    const COLS: usize = "+-------(h)ide--------".len();
+    const MIN_TERMINAL_COLS: usize = Self::COLS + 10;
+
+    pub fn remaining_cols(&self, terminal_size: TerminalSize) -> usize {
+        if self.hide || terminal_size.cols < Self::MIN_TERMINAL_COLS {
+            terminal_size.cols
+        } else {
+            terminal_size.cols - Self::COLS
+        }
+    }
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+        if canvas.frame_size().cols < Self::MIN_TERMINAL_COLS {
+            return;
+        }
+
         canvas.set_cursor(TokenPosition::row(0));
 
-        let editing = !matches!(state.focus, Focus::SearchResult);
+        let editing = state.focus.is_editing();
         if self.hide {
             let col = canvas.frame_size().cols - 11;
             canvas.set_col_offset(col);
@@ -34,10 +48,7 @@ impl LegendWidget {
     }
 
     fn render_editing_legend(&self, _state: &AppState, canvas: &mut Canvas) {
-        if canvas.frame_size().cols < Self::COLUMNS {
-            return;
-        }
-        canvas.set_col_offset(canvas.frame_size().cols - Self::COLUMNS);
+        canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
         canvas.drawln(Token::with_style(
             "|[ACTIONS]            ",
@@ -59,10 +70,10 @@ impl LegendWidget {
     }
 
     fn render_search_result_legend(&self, state: &AppState, canvas: &mut Canvas) {
-        if canvas.frame_size().cols < Self::COLUMNS {
+        if canvas.frame_size().cols < Self::COLS {
             return;
         }
-        canvas.set_col_offset(canvas.frame_size().cols - Self::COLUMNS);
+        canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
         canvas.drawln(Token::with_style(
             "|[ACTIONS]            ",

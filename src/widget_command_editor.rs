@@ -12,13 +12,18 @@ use crate::{
 pub struct CommandEditorWidget {
     original_text: String,
     index: usize,
+    available_cols: usize,
 }
 
 impl CommandEditorWidget {
     const ROW_OFFSET: usize = 1;
-    const COL_OFFSET: usize = "-> $ git ".len();
+    const COL_OFFSET: usize = "-> $ git".len();
     const START_POSITION: TokenPosition =
         TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
+
+    pub fn set_available_cols(&mut self, cols: usize) {
+        self.available_cols = cols;
+    }
 
     pub fn handle_focus_change(&mut self, state: &mut AppState) {
         let Some(arg) = state.focused_arg_mut() else {
@@ -26,7 +31,6 @@ impl CommandEditorWidget {
         };
         self.original_text = arg.text.clone();
         self.index = arg.len();
-        self.update_cursor_position(state);
         state.dirty = true;
     }
 
@@ -104,10 +108,6 @@ impl CommandEditorWidget {
             _ => {}
         }
 
-        if state.dirty {
-            self.update_cursor_position(state);
-        }
-
         Ok(())
     }
 
@@ -121,14 +121,14 @@ impl CommandEditorWidget {
     }
 
     fn render_grep_args(&self, state: &AppState, canvas: &mut Canvas, args: &[GrepArg]) {
-        let columns = self.available_columns(state);
+        let multiline = self.is_multiline(state);
         for arg in args {
-            let width = arg.width(state.focus) + 1; // +1 for ' ' prefix
-            if arg.line_breakable && Self::COL_OFFSET + width > columns {
+            let focused = arg.kind.is_focused(state.focus);
+            if multiline && arg.line_breakable {
                 canvas.newline();
-                canvas.set_cursor_col(Self::COL_OFFSET - 1);
+                canvas.set_cursor_col(Self::COL_OFFSET);
             }
-            let style = if arg.kind.is_focused(state.focus) {
+            let style = if focused {
                 TokenStyle::Bold
             } else {
                 TokenStyle::Plain
@@ -141,33 +141,40 @@ impl CommandEditorWidget {
         canvas.newline();
     }
 
-    fn update_cursor_position(&self, state: &mut AppState) {
+    pub fn update_cursor_position(&self, state: &mut AppState) {
         if !state.focus.is_editing() {
             state.show_terminal_cursor = None;
             return;
         }
 
-        let columns = self.available_columns(state);
+        let multiline = self.is_multiline(state);
         let mut pos = Self::START_POSITION;
         for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
-            let width = arg.width(state.focus) + 1; // +1 for ' '
-            if arg.line_breakable && Self::COL_OFFSET + width > columns {
+            if multiline && arg.line_breakable {
                 pos.row += 1;
                 pos.col = Self::COL_OFFSET;
             }
+            pos.col += 1; // for ' ' prefix
+
             if focused {
                 pos.col += arg.text[0..self.index].width();
                 state.show_terminal_cursor = Some(pos);
                 return;
+            } else {
+                pos.col += arg.width(state.focus);
             }
-            pos.col += width;
         }
     }
 
-    fn available_columns(&self, _state: &AppState) -> usize {
-        // TODO: use terminal size columns
-        // TODO: use canvas.size().columns
-        10
+    fn is_multiline(&self, state: &AppState) -> bool {
+        let cols = Self::COL_OFFSET
+            + state
+                .grep
+                .args(state.focus)
+                .iter()
+                .map(|a| a.width(state.focus) + 1) // +1 for ' ' prefix
+                .sum::<usize>();
+        cols > self.available_cols
     }
 }

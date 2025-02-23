@@ -65,6 +65,9 @@ impl App {
             return Ok(());
         }
 
+        self.command_editor
+            .set_available_cols(self.legend.remaining_cols(self.terminal.size()));
+
         let mut canvas = Canvas::new(self.frame_row_start, self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
         for widget in &self.widgets {
@@ -135,6 +138,7 @@ impl App {
 
         if self.state.dirty {
             self.render().or_fail()?;
+            self.command_editor.update_cursor_position(&mut self.state);
 
             // TODO: move to where after calling render()
             if let Some(position) = self.state.show_terminal_cursor {
