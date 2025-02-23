@@ -2,6 +2,7 @@ use mamegrep::{app::App, git};
 
 use orfail::OrFail;
 
+// TODO: -h, -v, <PATTERN>
 fn main() -> orfail::Result<()> {
     if !git::is_available() {
         eprintln!("error: no `git` command found, or not a Git directory");
