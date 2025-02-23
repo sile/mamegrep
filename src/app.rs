@@ -159,6 +159,12 @@ pub enum Focus {
     Path,
 }
 
+impl Focus {
+    pub fn is_editing(self) -> bool {
+        !matches!(self, Self::SearchResult)
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct AppState {
     pub grep: GrepOptions,
