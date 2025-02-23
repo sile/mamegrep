@@ -96,8 +96,11 @@ impl LegendWidget {
         canvas.drawln(Token::new("| (←)            [C-b]"));
         canvas.drawln(Token::new("| (→)            [C-f]"));
         canvas.drawln(Token::new("| (+|-) context lines "));
+        canvas.drawln(Token::new(format!(
+            "|                ({:2}) ",
+            state.grep.context_lines.0
+        )));
 
-        canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::with_style(
             "|[GIT GREP FLAGS]     ",
             TokenStyle::Bold,

@@ -489,11 +489,11 @@ impl Widget for MainWidget {
                 state.grep.perl_regexp = !state.grep.perl_regexp;
                 state.regrep().or_fail()?;
             }
-            KeyCode::Char('+') => {
+            KeyCode::Char('+') if state.grep.context_lines.0 < 99 => {
                 state.grep.context_lines.0 += 1;
                 state.regrep().or_fail()?;
             }
-            KeyCode::Char('-') if state.grep.context_lines.0 > 0 => {
+            KeyCode::Char('-') if state.grep.context_lines.0 > 1 => {
                 state.grep.context_lines.0 -= 1;
                 state.regrep().or_fail()?;
             }
