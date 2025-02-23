@@ -88,13 +88,19 @@ impl LegendWidget {
         canvas.drawln(Token::new("| edit (p)ath         "));
         canvas.drawln(Token::new("|                     "));
 
+        if state.cursor.is_file_level() {
+            canvas.drawln(Token::new("| (t)oggle       [TAB]"));
+            canvas.drawln(Token::new("| (T)oggle all        "));
+        }
         // TODO: conditional
-        canvas.drawln(Token::new("| (t)oggle       [TAB]"));
-        canvas.drawln(Token::new("| (T)oggle all        "));
         canvas.drawln(Token::new("| (↑)            [C-p]"));
         canvas.drawln(Token::new("| (↓)            [C-n]"));
-        canvas.drawln(Token::new("| (←)            [C-b]"));
-        canvas.drawln(Token::new("| (→)            [C-f]"));
+        if state.cursor.is_line_level() {
+            canvas.drawln(Token::new("| (←)            [C-b]"));
+        }
+        if state.cursor.is_file_level() {
+            canvas.drawln(Token::new("| (→)            [C-f]"));
+        }
         canvas.drawln(Token::new("| (+|-) context lines "));
         canvas.drawln(Token::new(format!(
             "|                ({:2}) ",

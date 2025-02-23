@@ -669,6 +669,14 @@ pub struct Cursor {
 }
 
 impl Cursor {
+    pub fn is_file_level(&self) -> bool {
+        self.file.is_some() && self.line_number.is_none()
+    }
+
+    pub fn is_line_level(&self) -> bool {
+        self.line_number.is_some()
+    }
+
     pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
         if self.line_number.is_some() {
             canvas.draw(Token::new("   "));
