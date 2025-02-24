@@ -59,7 +59,15 @@ impl SearchResult {
         self.highlight
             .lines
             .values()
-            .map(|v| v.len())
+            .map(|lines| lines.len())
+            .sum::<usize>()
+    }
+
+    pub fn hit_texts(&self) -> usize {
+        self.highlight
+            .lines
+            .values()
+            .flat_map(|lines| lines.values().map(|texts| texts.len()))
             .sum::<usize>()
     }
 

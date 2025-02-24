@@ -7,7 +7,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     app::{AppState, Focus},
     canvas::{Canvas, Token, TokenStyle},
-    git::{ContextLines, MatchLine},
+    git::{ContextLines, Line},
 };
 
 #[derive(Debug, Default)]
@@ -27,7 +27,8 @@ impl SearchResultWidget {
         };
         canvas.drawln(Token::with_style(
             format!(
-                "[RESULT]: {} lines, {} files",
+                "[RESULT]: {} hits, {} lines, {} files",
+                state.search_result.hit_texts(),
                 state.search_result.hit_lines(),
                 state.search_result.hit_files()
             ),
@@ -57,13 +58,7 @@ impl SearchResultWidget {
         }
     }
 
-    fn render_lines(
-        &self,
-        state: &AppState,
-        canvas: &mut Canvas,
-        file: &PathBuf,
-        lines: &[MatchLine],
-    ) {
+    fn render_lines(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, lines: &[Line]) {
         for line in lines.iter().filter(|l| l.matched) {
             let focused = state.cursor.is_line_focused(file, line.number);
             if focused {
@@ -76,7 +71,7 @@ impl SearchResultWidget {
         }
     }
 
-    fn render_line(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, line: &MatchLine) {
+    fn render_line(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, line: &Line) {
         state
             .cursor
             .render_for_line(canvas, file, line.number, state.focus);
@@ -97,7 +92,7 @@ impl SearchResultWidget {
         state: &AppState,
         canvas: &mut Canvas,
         file: &PathBuf,
-        line: &MatchLine,
+        line: &Line,
         mut col_offset: usize,
     ) {
         let hit_texts = state.search_result.hit_texts_in_line(file, line.number);
@@ -123,8 +118,8 @@ impl SearchResultWidget {
         state: &AppState,
         canvas: &mut Canvas,
         file: &PathBuf,
-        lines: &[MatchLine],
-        current_line: &MatchLine,
+        lines: &[Line],
+        current_line: &Line,
     ) {
         if state.grep.context_lines == ContextLines::MIN {
             return;
@@ -154,8 +149,8 @@ impl SearchResultWidget {
         state: &AppState,
         canvas: &mut Canvas,
         file: &PathBuf,
-        lines: &[MatchLine],
-        current_line: &MatchLine,
+        lines: &[Line],
+        current_line: &Line,
     ) {
         if state.grep.context_lines == ContextLines::MIN {
             return;
