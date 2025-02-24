@@ -1,21 +1,24 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
 
 use crate::{
     app::{AppState, Focus},
     canvas::{Canvas, Token, TokenStyle},
-    git::ContextLines,
+    git::{ContextLines, MatchLine},
 };
 
 #[derive(Debug, Default)]
-pub struct SearchResultWidget {
-    //
-}
+pub struct SearchResultWidget {}
 
 impl SearchResultWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+        self.render_header_line(state, canvas);
+        self.render_files(state, canvas);
+    }
+
+    fn render_header_line(&self, state: &AppState, canvas: &mut Canvas) {
         let style = if state.focus.is_editing() {
             TokenStyle::Plain
         } else {
@@ -31,12 +34,55 @@ impl SearchResultWidget {
         ));
     }
 
+    fn render_files(&self, state: &AppState, canvas: &mut Canvas) {
+        for (file, lines) in &state.search_result.files {
+            state.cursor.render_for_file(canvas, file, state.focus);
+            canvas.draw(Token::with_style(
+                format!("{}", file.display()),
+                TokenStyle::Underlined,
+            ));
+            canvas.draw(Token::new(format!(
+                " ({} hits, {} lines)",
+                state.search_result.hit_strings_in_file(file),
+                state.search_result.hit_lines_in_file(file)
+            )));
+
+            if state.collapsed.contains(file) {
+                canvas.drawln(Token::new("…"));
+            } else {
+                canvas.newline();
+                self.render_lines(state, canvas, file, lines);
+            }
+        }
+    }
+
+    fn render_lines(
+        &self,
+        state: &AppState,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        lines: &[MatchLine],
+    ) {
+    }
+
     pub fn handle_key_event(
         &mut self,
         state: &mut AppState,
         event: KeyEvent,
     ) -> orfail::Result<()> {
+        if event.modifiers.contains(KeyModifiers::CONTROL) {
+            match event.code {
+                KeyCode::Char('p') => state.cursor_up(),
+                KeyCode::Char('n') => state.cursor_down(),
+                KeyCode::Char('f') => state.cursor_right(),
+                KeyCode::Char('b') => state.cursor_left(),
+                _ => {}
+            }
+            return Ok(());
+        }
+
         match event.code {
+            // TODO: recenter
             KeyCode::Char('/' | 'e') => state.set_focus(Focus::Pattern),
             KeyCode::Char('a') => state.set_focus(Focus::AndPattern),
             KeyCode::Char('n') => state.set_focus(Focus::NotPattern),
@@ -64,19 +110,11 @@ impl SearchResultWidget {
                 state.grep.context_lines.0 -= 1;
                 state.regrep().or_fail()?;
             }
-            KeyCode::Up => {
-                state.cursor_up();
-            }
-            KeyCode::Down => {
-                state.cursor_down();
-            }
-            KeyCode::Right => {
-                state.cursor_right();
-            }
-            KeyCode::Left => {
-                state.cursor_left();
-            }
-            KeyCode::Char('t') => {
+            KeyCode::Up => state.cursor_up(),
+            KeyCode::Down => state.cursor_down(),
+            KeyCode::Right => state.cursor_right(),
+            KeyCode::Left => state.cursor_left(),
+            KeyCode::Char('t') | KeyCode::Tab => {
                 state.toggle_expansion();
             }
             KeyCode::Char('T') => {
@@ -103,10 +141,8 @@ impl Cursor {
         self.line_number.is_some()
     }
 
-    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
-        if self.line_number.is_some() {
-            canvas.draw(Token::new("   "));
-        } else if self.file.as_ref() == Some(file) {
+    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf, focus: Focus) {
+        if !focus.is_editing() && self.is_file_level() && self.file.as_ref() == Some(file) {
             canvas.draw(Token::new("-> "));
         } else {
             canvas.draw(Token::new("   "));

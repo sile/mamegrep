@@ -63,6 +63,21 @@ impl SearchResult {
             .sum::<usize>()
     }
 
+    pub fn hit_strings_in_file(&self, file: &PathBuf) -> usize {
+        self.highlight
+            .lines
+            .get(file)
+            .map(|v| v.values().map(|v| v.len()).sum::<usize>())
+            .unwrap_or_default()
+    }
+
+    pub fn hit_lines_in_file(&self, file: &PathBuf) -> usize {
+        self.files
+            .get(file)
+            .map(|lines| lines.iter().filter(|l| l.matched).count())
+            .unwrap_or_default()
+    }
+
     fn parse(s: &str, highlight: Highlight, context_lines: usize) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
