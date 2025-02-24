@@ -225,8 +225,19 @@ impl AppState {
     }
 
     pub fn regrep(&mut self) -> orfail::Result<()> {
-        // TODO: error handling (show error message instead of exit)
-        self.search_result = self.grep.call().or_fail()?;
+        let result = self.grep.call().or_fail();
+        match result {
+            Ok(result) => {
+                self.search_result = result;
+            }
+            Err(e) => {
+                if let Some(result) = self.grep.get_error_result() {
+                    self.search_result = result;
+                } else {
+                    return Err(e);
+                }
+            }
+        }
         self.dirty = true;
         self.reset_cursor();
         Ok(())

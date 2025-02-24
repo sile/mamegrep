@@ -43,6 +43,7 @@ pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<Line>>,
     pub max_line_width: usize,
     pub highlight: Highlight,
+    pub error: Option<String>,
 }
 
 impl SearchResult {
@@ -115,6 +116,7 @@ impl SearchResult {
             files,
             max_line_width,
             highlight,
+            error: None,
         })
     }
 }
@@ -325,6 +327,21 @@ impl Default for GrepOptions {
 impl GrepOptions {
     pub fn args(&self, focus: Focus) -> Vec<GrepArg> {
         self.build_grep_args(Mode::External, focus)
+    }
+
+    pub fn get_error_result(&self) -> Option<SearchResult> {
+        let args = self.build_grep_args(Mode::External, Focus::SearchResult);
+        let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
+        let output = Command::new("git").args(args).output().ok()?;
+        if output.stderr.is_empty() {
+            return None;
+        }
+        String::from_utf8(output.stderr)
+            .ok()
+            .map(|error| SearchResult {
+                error: Some(error.trim().to_owned()),
+                ..Default::default()
+            })
     }
 
     pub fn call(&self) -> orfail::Result<SearchResult> {

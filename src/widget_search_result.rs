@@ -15,8 +15,24 @@ pub struct SearchResultWidget {}
 
 impl SearchResultWidget {
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
+        if let Some(error) = &state.search_result.error {
+            self.render_error(state, canvas, error);
+            return;
+        }
+
         self.render_header_line(state, canvas);
         self.render_files(state, canvas);
+    }
+
+    fn render_error(&self, state: &AppState, canvas: &mut Canvas, error: &str) {
+        let style = if state.focus.is_editing() {
+            TokenStyle::Plain
+        } else {
+            TokenStyle::Bold
+        };
+
+        canvas.drawln(Token::with_style("[RESULT]: error", style));
+        canvas.drawln(Token::new(error));
     }
 
     fn render_header_line(&self, state: &AppState, canvas: &mut Canvas) {
@@ -25,6 +41,7 @@ impl SearchResultWidget {
         } else {
             TokenStyle::Bold
         };
+
         canvas.drawln(Token::with_style(
             format!(
                 "[RESULT]: {} hits, {} lines, {} files",
