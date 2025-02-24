@@ -80,11 +80,11 @@ impl SearchResultWidget {
         for line in lines.iter().filter(|l| l.hit) {
             let focused = state.cursor.is_line_focused(file, line.number);
             if focused {
-                self.render_before_lines(state, canvas, file, lines, line);
+                self.render_before_lines(state, canvas, lines, line);
             }
             self.render_line(state, canvas, file, line);
             if focused {
-                self.render_after_lines(state, canvas, file, lines, line);
+                self.render_after_lines(state, canvas, lines, line);
             }
         }
     }
@@ -133,7 +133,6 @@ impl SearchResultWidget {
         &self,
         state: &AppState,
         canvas: &mut Canvas,
-        file: &PathBuf,
         lines: &[Line],
         current_line: &Line,
     ) {
@@ -160,7 +159,6 @@ impl SearchResultWidget {
         &self,
         state: &AppState,
         canvas: &mut Canvas,
-        file: &PathBuf,
         lines: &[Line],
         current_line: &Line,
     ) {

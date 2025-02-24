@@ -472,7 +472,7 @@ fn call(args: &[&str], check_status: bool) -> orfail::Result<String> {
     (!check_status || output.status.success()).or_fail_with(error)?;
     (check_status || output.stderr.is_empty()).or_fail_with(error)?;
 
-    String::from_utf8(output.stdout).or_fail()
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 #[cfg(test)]
