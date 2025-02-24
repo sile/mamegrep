@@ -59,7 +59,7 @@ impl SearchResultWidget {
     }
 
     fn render_lines(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, lines: &[Line]) {
-        for line in lines.iter().filter(|l| l.matched) {
+        for line in lines.iter().filter(|l| l.hit) {
             let focused = state.cursor.is_line_focused(file, line.number);
             if focused {
                 self.render_before_lines(state, canvas, file, lines, line);

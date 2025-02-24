@@ -81,7 +81,7 @@ impl SearchResult {
     pub fn hit_lines_in_file(&self, file: &PathBuf) -> usize {
         self.files
             .get(file)
-            .map(|lines| lines.iter().filter(|l| l.matched).count())
+            .map(|lines| lines.iter().filter(|l| l.hit).count())
             .unwrap_or_default()
     }
 
@@ -123,7 +123,7 @@ impl SearchResult {
 pub struct Line {
     pub number: NonZeroUsize,
     pub text: String,
-    pub matched: bool,
+    pub hit: bool,
 }
 
 impl Line {
@@ -135,7 +135,7 @@ impl Line {
                     return Some(Self {
                         number,
                         text: line[i + 1..].to_owned(),
-                        matched: true,
+                        hit: true,
                     });
                 }
                 '-' => {
@@ -143,7 +143,7 @@ impl Line {
                     return Some(Self {
                         number,
                         text: line[i + 1..].to_owned(),
-                        matched: false,
+                        hit: false,
                     });
                 }
                 '0'..='9' => {}
@@ -389,7 +389,7 @@ impl GrepOptions {
         if self.no_recursive {
             args.push(GrepArg::other("--no-recursive"));
         }
-        if matches!(mode, Mode::Parsing) && self.context_lines.0 > 0 {
+        if matches!(mode, Mode::Parsing) {
             args.push(GrepArg::other("--heading"));
             args.push(GrepArg::other("-C"));
             args.push(GrepArg::other(&self.context_lines.0.to_string()));

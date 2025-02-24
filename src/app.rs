@@ -303,7 +303,7 @@ impl AppState {
 
         // TODO: optimize
         for line in lines.iter().rev() {
-            if !line.matched {
+            if !line.hit {
                 continue;
             }
 
@@ -323,7 +323,7 @@ impl AppState {
         } else {
             let file = self.cursor.file.as_ref().expect("infallible");
             let lines = self.search_result.files.get(file).expect("infallible");
-            self.cursor.line_number = lines.iter().rev().find(|l| l.matched).map(|l| l.number);
+            self.cursor.line_number = lines.iter().rev().find(|l| l.hit).map(|l| l.number);
         }
     }
 
@@ -347,7 +347,7 @@ impl AppState {
 
         // TODO: optimize
         for line in lines {
-            if !line.matched {
+            if !line.hit {
                 continue;
             }
 
@@ -395,10 +395,11 @@ impl AppState {
             .get(file)
             .expect("infallible")
             .iter()
-            .find(|l| l.matched)
+            .find(|l| l.hit)
             .expect("infallible")
             .number;
         self.cursor.line_number = Some(line_number);
+        self.collapsed.remove(file);
         self.dirty = true;
     }
 
@@ -410,41 +411,56 @@ impl AppState {
     }
 
     fn reset_cursor(&mut self) {
-        if self.search_result.files.is_empty() {
+        if self.search_result.is_empty() {
             self.cursor = Cursor::default();
             return;
         }
 
-        if self.cursor.line_number.is_some() {
-            todo!();
-        }
-
-        if let Some(f) = &self.cursor.file {
-            if !self.search_result.files.contains_key(f) {
-                self.cursor.line_number = None;
-                let new = self
-                    .search_result
-                    .files
-                    .range::<PathBuf, RangeTo<_>>(..f)
-                    .rev()
-                    .chain(self.search_result.files.range::<PathBuf, RangeFrom<_>>(f..))
-                    .next()
-                    .map(|(k, _)| k.clone());
-                self.cursor.file = new;
-            }
-        } else {
-            let new = self.search_result.files.keys().next().cloned();
-            self.cursor.file = new;
-        }
-
-        let file = self.cursor.file.as_ref().expect("infallible");
-        let Some(line_number) = self.cursor.line_number else {
+        let Some(old_file) = &self.cursor.file else {
+            let new_file = self.search_result.files.keys().next().cloned();
+            self.cursor.file = new_file;
             return;
         };
-        let lines = self.search_result.files.get(file).expect("infallible");
-        if let Err(i) = lines.binary_search_by_key(&line_number, |x| x.number) {
-            let line = lines.get(i).unwrap_or(lines.last().expect("infallible"));
-            self.cursor.line_number = Some(line.number);
+
+        if !self.search_result.files.contains_key(old_file) {
+            let new_file = self
+                .search_result
+                .files
+                .range::<PathBuf, RangeTo<_>>(..old_file)
+                .rev()
+                .chain(
+                    self.search_result
+                        .files
+                        .range::<PathBuf, RangeFrom<_>>(old_file..),
+                )
+                .next()
+                .map(|(k, _)| k.clone());
+
+            if let Some(new_file) = &new_file {
+                if self.cursor.line_number.is_some() {
+                    self.cursor.line_number = self
+                        .search_result
+                        .files
+                        .get(new_file)
+                        .expect("infallible")
+                        .get(0)
+                        .map(|line| line.number);
+                }
+            }
+
+            self.cursor.file = new_file;
+            return;
         }
+
+        let Some(old_line_number) = self.cursor.line_number else {
+            return;
+        };
+        let file = self.cursor.file.as_ref().expect("infallible");
+        let lines = self.search_result.files.get(file).expect("infallible");
+        self.cursor.line_number = lines
+            .iter()
+            .find(|line| line.hit && old_line_number >= line.number)
+            .or_else(|| lines.iter().find(|line| line.hit))
+            .map(|line| line.number);
     }
 }
