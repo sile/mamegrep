@@ -2,6 +2,7 @@ use std::{num::NonZeroUsize, path::PathBuf};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
+use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
@@ -43,7 +44,7 @@ impl SearchResultWidget {
             ));
             canvas.draw(Token::new(format!(
                 " ({} hits, {} lines)",
-                state.search_result.hit_strings_in_file(file),
+                state.search_result.hit_texts_in_file(file),
                 state.search_result.hit_lines_in_file(file)
             )));
 
@@ -80,40 +81,41 @@ impl SearchResultWidget {
             .cursor
             .render_for_line(canvas, file, line.number, state.focus);
 
-        //             // TODO: rename var
-        //             let matched_columns = result
-        //                 .highlight
-        //                 .lines
-        //                 .get(file)
-        //                 .and_then(|v| v.get(&line.number))
-        //                 .map(|v| v.as_slice())
-        //                 .unwrap_or(&[]);
-
         canvas.draw(Token::new(format!(
-            "[{:>width$}]",
+            "[{:>width$}] ",
             line.number,
             width = state.search_result.max_line_width
         )));
-
-        //             let base = canvas.cursor();
+        let col_offset = canvas.cursor().col;
         canvas.draw(Token::new(&line.text));
-
-        //             let mut offset = 0;
-        //             for matched_text in matched_columns {
-        //                 // TODO: Consider multi byte char
-        //                 let i = offset + line.text[offset..].find(matched_text).expect("TODO");
-        //                 let s = matched_text;
-        //                 offset = i + matched_text.len();
-        //                 canvas.draw_at(
-        //                     TokenPosition {
-        //                         row: base.row,
-
-        //                         col: base.col + i,
-        //                     },
-        //                     Token::with_style(s, TokenStyle::Reverse),
-        //                 );
-        //             }
+        self.highlight_line(state, canvas, file, line, col_offset);
         canvas.newline();
+    }
+
+    fn highlight_line(
+        &self,
+        state: &AppState,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        line: &MatchLine,
+        mut col_offset: usize,
+    ) {
+        let hit_texts = state.search_result.hit_texts_in_line(file, line.number);
+        let mut line_text = &line.text[..];
+        for hit_text in hit_texts {
+            let Some(i) = line_text.find(hit_text) else {
+                // Normally, this branch should not be executed.
+                // (Possibly, the file was edited during the git grep call.)
+                continue;
+            };
+
+            col_offset += line_text[..i].width();
+            canvas.set_cursor_col(col_offset);
+            canvas.draw(Token::with_style(hit_text, TokenStyle::Reverse));
+
+            col_offset += hit_text.width();
+            line_text = &line_text[i + hit_text.len()..];
+        }
     }
 
     fn render_before_lines(
