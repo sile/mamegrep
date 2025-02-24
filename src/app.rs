@@ -28,7 +28,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> orfail::Result<Self> {
+    pub fn new(initial_pattern: Option<String>) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
             exit: false,
@@ -37,8 +37,15 @@ impl App {
             command_editor: CommandEditorWidget::default(),
             search_result: SearchResultWidget::default(),
         };
-        this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
-            .or_fail()?;
+
+        if let Some(pattern) = initial_pattern {
+            this.state.grep.pattern.text = pattern;
+            this.state.regrep().or_fail()?;
+        } else {
+            this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
+                .or_fail()?;
+        }
+
         Ok(this)
     }
 
