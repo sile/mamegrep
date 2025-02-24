@@ -110,7 +110,11 @@ impl CommandEditorWidget {
     }
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
-        canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Bold));
+        if state.focus.is_editing() {
+            canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Bold));
+        } else {
+            canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Plain));
+        }
 
         let prefix = if state.focus.is_editing() { "->" } else { "  " };
         canvas.draw(Token::new(format!("{prefix} $ git")));

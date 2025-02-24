@@ -51,6 +51,18 @@ impl SearchResult {
         self.files.is_empty()
     }
 
+    pub fn hit_files(&self) -> usize {
+        self.files.len()
+    }
+
+    pub fn hit_lines(&self) -> usize {
+        self.highlight
+            .lines
+            .values()
+            .map(|v| v.len())
+            .sum::<usize>()
+    }
+
     fn parse(s: &str, highlight: Highlight, context_lines: usize) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
