@@ -231,8 +231,8 @@ impl AppState {
         Ok(())
     }
 
-    fn toggle_expansion(&mut self) {
-        if self.cursor.line_number.is_some() {
+    pub fn toggle_expansion(&mut self) {
+        if self.cursor.is_line_level() {
             return;
         }
 
@@ -245,9 +245,9 @@ impl AppState {
         self.dirty = true;
     }
 
-    fn toggle_all_expansion(&mut self) {
-        if self.cursor.line_number.is_some() {
-            todo!()
+    pub fn toggle_all_expansion(&mut self) {
+        if self.cursor.is_line_level() {
+            return;
         }
 
         if self
@@ -266,15 +266,11 @@ impl AppState {
         self.dirty = true;
     }
 
-    fn cursor_up(&mut self) {
-        if self.search_result.files.is_empty() {
-            return;
-        }
-
-        if self.cursor.line_number.is_some() {
-            self.cursor_up_line();
-        } else {
+    pub fn cursor_up(&mut self) {
+        if self.cursor.is_file_level() {
             self.cursor_up_file();
+        } else if self.cursor.is_line_level() {
+            self.cursor_up_line();
         }
     }
 
@@ -331,15 +327,11 @@ impl AppState {
         }
     }
 
-    fn cursor_down(&mut self) {
-        if self.search_result.files.is_empty() {
-            return;
-        }
-
-        if self.cursor.line_number.is_some() {
-            self.cursor_down_line();
-        } else {
+    pub fn cursor_down(&mut self) {
+        if self.cursor.is_file_level() {
             self.cursor_down_file();
+        } else if self.cursor.is_line_level() {
+            self.cursor_down_line();
         }
     }
 
@@ -391,8 +383,8 @@ impl AppState {
         }
     }
 
-    fn cursor_right(&mut self) {
-        if self.search_result.files.is_empty() | self.cursor.line_number.is_some() {
+    pub fn cursor_right(&mut self) {
+        if self.search_result.is_empty() | self.cursor.is_line_level() {
             return;
         }
 
@@ -410,9 +402,11 @@ impl AppState {
         self.dirty = true;
     }
 
-    fn cursor_left(&mut self) {
-        self.cursor.line_number = None;
-        self.dirty = true;
+    pub fn cursor_left(&mut self) {
+        if self.cursor.is_line_level() {
+            self.cursor.line_number = None;
+            self.dirty = true;
+        }
     }
 
     fn reset_cursor(&mut self) {

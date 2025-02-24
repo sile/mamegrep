@@ -64,24 +64,24 @@ impl SearchResultWidget {
                 state.grep.context_lines.0 -= 1;
                 state.regrep().or_fail()?;
             }
-            // KeyCode::Up => {
-            //     state.cursor_up();
-            // }
-            // KeyCode::Down => {
-            //     state.cursor_down();
-            // }
-            // KeyCode::Right => {
-            //     state.cursor_right();
-            // }
-            // KeyCode::Left => {
-            //     state.cursor_left();
-            // }
-            // KeyCode::Char('t') => {
-            //     state.toggle_expansion();
-            // }
-            // KeyCode::Char('T') => {
-            //     state.toggle_all_expansion();
-            // }
+            KeyCode::Up => {
+                state.cursor_up();
+            }
+            KeyCode::Down => {
+                state.cursor_down();
+            }
+            KeyCode::Right => {
+                state.cursor_right();
+            }
+            KeyCode::Left => {
+                state.cursor_left();
+            }
+            KeyCode::Char('t') => {
+                state.toggle_expansion();
+            }
+            KeyCode::Char('T') => {
+                state.toggle_all_expansion();
+            }
             _ => {}
         }
         Ok(())
