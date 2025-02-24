@@ -22,7 +22,7 @@ impl Highlight {
         let mut lines = BTreeMap::<_, BTreeMap<_, Vec<_>>>::new();
         let mut current = PathBuf::new();
         for line in s.lines() {
-            if let Some(m) = MatchLine::parse(line) {
+            if let Some(m) = Line::parse(line) {
                 lines
                     .get_mut(&current)
                     .or_fail()?
@@ -40,7 +40,7 @@ impl Highlight {
 
 #[derive(Debug, Default, Clone)]
 pub struct SearchResult {
-    pub files: BTreeMap<PathBuf, Vec<MatchLine>>,
+    pub files: BTreeMap<PathBuf, Vec<Line>>,
     pub max_line_width: usize,
     pub highlight: Highlight,
     pub context_lines: usize,
@@ -96,7 +96,7 @@ impl SearchResult {
                 continue;
             }
 
-            if let Some(line) = MatchLine::parse(line) {
+            if let Some(line) = Line::parse(line) {
                 max_line_width = max_line_width.max(line.number.to_string().len());
                 files.get_mut(&current).or_fail()?.push(line);
             } else {
@@ -113,15 +113,14 @@ impl SearchResult {
     }
 }
 
-// TODO: Rename (Line?)
 #[derive(Debug, Clone)]
-pub struct MatchLine {
+pub struct Line {
     pub number: NonZeroUsize,
     pub text: String,
     pub matched: bool,
 }
 
-impl MatchLine {
+impl Line {
     fn parse(line: &str) -> Option<Self> {
         for (i, c) in line.char_indices() {
             match c {
