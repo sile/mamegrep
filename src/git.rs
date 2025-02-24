@@ -104,6 +104,7 @@ impl SearchResult {
     }
 }
 
+// TODO: Rename (Line?)
 #[derive(Debug, Clone)]
 pub struct MatchLine {
     pub number: NonZeroUsize,

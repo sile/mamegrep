@@ -63,6 +63,120 @@ impl SearchResultWidget {
         file: &PathBuf,
         lines: &[MatchLine],
     ) {
+        for line in lines.iter().filter(|l| l.matched) {
+            let focused = state.cursor.is_line_focused(file, line.number);
+            if focused {
+                self.render_before_lines(state, canvas, file, lines, line);
+            }
+            self.render_line(state, canvas, file, line);
+            if focused {
+                self.render_after_lines(state, canvas, file, lines, line);
+            }
+        }
+    }
+
+    fn render_line(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, line: &MatchLine) {
+        state
+            .cursor
+            .render_for_line(canvas, file, line.number, state.focus);
+
+        //             // TODO: rename var
+        //             let matched_columns = result
+        //                 .highlight
+        //                 .lines
+        //                 .get(file)
+        //                 .and_then(|v| v.get(&line.number))
+        //                 .map(|v| v.as_slice())
+        //                 .unwrap_or(&[]);
+
+        canvas.draw(Token::new(format!(
+            "[{:>width$}]",
+            line.number,
+            width = state.search_result.max_line_width
+        )));
+
+        //             let base = canvas.cursor();
+        canvas.draw(Token::new(&line.text));
+
+        //             let mut offset = 0;
+        //             for matched_text in matched_columns {
+        //                 // TODO: Consider multi byte char
+        //                 let i = offset + line.text[offset..].find(matched_text).expect("TODO");
+        //                 let s = matched_text;
+        //                 offset = i + matched_text.len();
+        //                 canvas.draw_at(
+        //                     TokenPosition {
+        //                         row: base.row,
+
+        //                         col: base.col + i,
+        //                     },
+        //                     Token::with_style(s, TokenStyle::Reverse),
+        //                 );
+        //             }
+        canvas.newline();
+    }
+
+    fn render_before_lines(
+        &self,
+        state: &AppState,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        lines: &[MatchLine],
+        current_line: &MatchLine,
+    ) {
+        if state.grep.context_lines == ContextLines::MIN {
+            return;
+        }
+
+        canvas.newline();
+
+        //     // TODO: optimize
+        //     for l in lines {
+        //         if l.number == line.number {
+        //             break;
+        //         }
+        //         if line.number.get() - l.number.get() <= result.context_lines {
+        //             canvas.drawln(Token::new(format!(
+        //                 "      {:>width$}|{}",
+        //                 "",
+        //                 l.text,
+        //                 width = result.max_line_width,
+        //             )));
+        //         }
+        //     }
+        // }
+    }
+
+    fn render_after_lines(
+        &self,
+        state: &AppState,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        lines: &[MatchLine],
+        current_line: &MatchLine,
+    ) {
+        if state.grep.context_lines == ContextLines::MIN {
+            return;
+        }
+
+        //                 // TODO: optimize
+        //                 for l in lines {
+        //                     if l.number <= line.number {
+        //                         continue;
+        //                     }
+        //                     if l.number.get() - line.number.get() <= result.context_lines {
+        //                         canvas.drawln(Token::new(format!(
+        //                             "      {:>width$}|{}",
+        //                             "",
+        //                             l.text,
+        //                             width = result.max_line_width,
+        //                         )));
+        //                     } else {
+        //                         break;
+        //                     }
+        //                 }
+
+        canvas.newline();
     }
 
     pub fn handle_key_event(
@@ -102,11 +216,15 @@ impl SearchResultWidget {
             KeyCode::Char('P') if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
                 state.flip_grep_flag(|f| &mut f.perl_regexp).or_fail()?;
             }
-            KeyCode::Char('+') if state.grep.context_lines < ContextLines::MAX => {
+            KeyCode::Char('+')
+                if state.cursor.is_line_level() && state.grep.context_lines < ContextLines::MAX =>
+            {
                 state.grep.context_lines.0 += 1;
                 state.regrep().or_fail()?;
             }
-            KeyCode::Char('-') if state.grep.context_lines > ContextLines::MIN => {
+            KeyCode::Char('-')
+                if state.cursor.is_line_level() && state.grep.context_lines > ContextLines::MIN =>
+            {
                 state.grep.context_lines.0 -= 1;
                 state.regrep().or_fail()?;
             }
@@ -149,8 +267,14 @@ impl Cursor {
         }
     }
 
-    pub fn render_for_line(&self, canvas: &mut Canvas, file: &PathBuf, line_number: NonZeroUsize) {
-        if self.is_line_focused(file, line_number) {
+    pub fn render_for_line(
+        &self,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        line_number: NonZeroUsize,
+        focus: Focus,
+    ) {
+        if !focus.is_editing() && self.is_line_focused(file, line_number) {
             canvas.draw(Token::new("---> "));
         } else {
             canvas.draw(Token::new("     "));
