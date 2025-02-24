@@ -126,22 +126,18 @@ impl SearchResultWidget {
         }
 
         canvas.newline();
-
-        //     // TODO: optimize
-        //     for l in lines {
-        //         if l.number == line.number {
-        //             break;
-        //         }
-        //         if line.number.get() - l.number.get() <= result.context_lines {
-        //             canvas.drawln(Token::new(format!(
-        //                 "      {:>width$}|{}",
-        //                 "",
-        //                 l.text,
-        //                 width = result.max_line_width,
-        //             )));
-        //         }
-        //     }
-        // }
+        let end = lines
+            .binary_search_by_key(&current_line.number, |l| l.number)
+            .expect("infallible");
+        let start = end.saturating_sub(state.grep.context_lines.0);
+        for line in &lines[start..end] {
+            canvas.drawln(Token::new(format!(
+                "      {:>width$}| {}",
+                "",
+                line.text,
+                width = state.search_result.max_line_width,
+            )));
+        }
     }
 
     fn render_after_lines(
@@ -156,23 +152,19 @@ impl SearchResultWidget {
             return;
         }
 
-        //                 // TODO: optimize
-        //                 for l in lines {
-        //                     if l.number <= line.number {
-        //                         continue;
-        //                     }
-        //                     if l.number.get() - line.number.get() <= result.context_lines {
-        //                         canvas.drawln(Token::new(format!(
-        //                             "      {:>width$}|{}",
-        //                             "",
-        //                             l.text,
-        //                             width = result.max_line_width,
-        //                         )));
-        //                     } else {
-        //                         break;
-        //                     }
-        //                 }
-
+        let start = lines
+            .binary_search_by_key(&current_line.number, |l| l.number)
+            .expect("infallible")
+            + 1;
+        let end = (start + state.grep.context_lines.0).min(lines.len());
+        for line in &lines[start..end] {
+            canvas.drawln(Token::new(format!(
+                "      {:>width$}| {}",
+                "",
+                line.text,
+                width = state.search_result.max_line_width,
+            )));
+        }
         canvas.newline();
     }
 

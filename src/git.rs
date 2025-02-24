@@ -43,7 +43,6 @@ pub struct SearchResult {
     pub files: BTreeMap<PathBuf, Vec<Line>>,
     pub max_line_width: usize,
     pub highlight: Highlight,
-    pub context_lines: usize,
 }
 
 impl SearchResult {
@@ -95,7 +94,7 @@ impl SearchResult {
             .unwrap_or(&[])
     }
 
-    fn parse(s: &str, highlight: Highlight, context_lines: usize) -> orfail::Result<Self> {
+    fn parse(s: &str, highlight: Highlight) -> orfail::Result<Self> {
         let mut files = BTreeMap::<_, Vec<_>>::new();
         let mut current = PathBuf::new();
         let mut max_line_width = 1;
@@ -116,7 +115,6 @@ impl SearchResult {
             files,
             max_line_width,
             highlight,
-            context_lines,
         })
     }
 }
@@ -160,7 +158,7 @@ impl Line {
 pub struct ContextLines(pub usize);
 
 impl ContextLines {
-    pub const MIN: Self = Self(1);
+    pub const MIN: Self = Self(0);
     pub const MAX: Self = Self(99);
 }
 
@@ -345,7 +343,7 @@ impl GrepOptions {
                 let args = self.build_grep_args(Mode::Parsing, Focus::SearchResult);
                 let args = args.iter().map(|s| s.text.as_str()).collect::<Vec<_>>();
                 let output = call(&args, false).or_fail()?;
-                SearchResult::parse(&output, Highlight::default(), self.context_lines.0).or_fail()
+                SearchResult::parse(&output, Highlight::default()).or_fail()
             });
 
             let highlight = handle0
@@ -470,7 +468,7 @@ mod tests {
 315:        line.draw_token(2, Token::new("foo"));
 316:        assert_eq!(line.text(), "  foo");
 "#;
-        let result = SearchResult::parse(&output, Highlight::default(), 3).or_fail()?;
+        let result = SearchResult::parse(&output, Highlight::default()).or_fail()?;
         assert_eq!(result.files.len(), 1);
 
         let lines = result
