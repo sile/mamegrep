@@ -17,7 +17,7 @@ pub struct CommandEditorWidget {
 
 impl CommandEditorWidget {
     const ROW_OFFSET: usize = 1;
-    const COL_OFFSET: usize = "-> $ git".len();
+    const COL_OFFSET: usize = "$ git".len();
 
     pub fn set_available_cols(&mut self, cols: usize) {
         self.available_cols = cols;
@@ -111,13 +111,12 @@ impl CommandEditorWidget {
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         if state.focus.is_editing() {
-            canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Bold));
+            canvas.drawln(Token::with_style("[COMMAND]: editing…", TokenStyle::Bold));
         } else {
             canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Plain));
         }
 
-        let prefix = if state.focus.is_editing() { "->" } else { "  " };
-        canvas.draw(Token::new(format!("{prefix} $ git")));
+        canvas.draw(Token::new(format!("$ git")));
 
         self.render_grep_args(state, canvas, &state.grep.args(state.focus));
     }

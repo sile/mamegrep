@@ -37,10 +37,10 @@ impl SearchResultWidget {
     }
 
     fn render_files(&self, state: &AppState, canvas: &mut Canvas) {
-        for (file, lines) in &state.search_result.files {
-            state.cursor.render_for_file(canvas, file, state.focus);
+        for (file_index, (file, lines)) in state.search_result.files.iter().enumerate() {
+            state.cursor.render_for_file(canvas, file);
             canvas.draw(Token::with_style(
-                format!("{}", file.display()),
+                format!("{file_index}# {}", file.display()),
                 TokenStyle::Underlined,
             ));
             canvas.draw(Token::new(format!(
@@ -72,9 +72,7 @@ impl SearchResultWidget {
     }
 
     fn render_line(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, line: &Line) {
-        state
-            .cursor
-            .render_for_line(canvas, file, line.number, state.focus);
+        state.cursor.render_for_line(canvas, file, line.number);
 
         canvas.draw(Token::new(format!(
             "[{:>width$}] ",
@@ -248,22 +246,16 @@ impl Cursor {
         self.line_number.is_some()
     }
 
-    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf, focus: Focus) {
-        if !focus.is_editing() && self.is_file_level() && self.file.as_ref() == Some(file) {
+    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
+        if self.is_file_level() && self.file.as_ref() == Some(file) {
             canvas.draw(Token::new("-> "));
         } else {
             canvas.draw(Token::new("   "));
         }
     }
 
-    pub fn render_for_line(
-        &self,
-        canvas: &mut Canvas,
-        file: &PathBuf,
-        line_number: NonZeroUsize,
-        focus: Focus,
-    ) {
-        if !focus.is_editing() && self.is_line_focused(file, line_number) {
+    pub fn render_for_line(&self, canvas: &mut Canvas, file: &PathBuf, line_number: NonZeroUsize) {
+        if self.is_line_focused(file, line_number) {
             canvas.draw(Token::new("---> "));
         } else {
             canvas.draw(Token::new("     "));
