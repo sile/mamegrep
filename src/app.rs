@@ -1,5 +1,6 @@
 use std::{
     collections::BTreeSet,
+    num::NonZeroUsize,
     ops::{RangeFrom, RangeTo},
     path::PathBuf,
 };
@@ -303,39 +304,30 @@ impl AppState {
         }
     }
 
-    fn peek_cursor_up_line(&self) -> Option<usize> {
-        Some(0) // TODO
+    fn peek_cursor_up_line(&self) -> Option<(&PathBuf, NonZeroUsize)> {
+        let file = self.cursor.file.as_ref()?;
+        let line_number = self.cursor.line_number?;
+        let lines = self.search_result.files.get(file).expect("infallible");
+
+        if let Some(new_line) = lines
+            .iter()
+            .rfind(|line| line.hit && line.number < line_number)
+        {
+            Some((file, new_line.number))
+        } else if let Some(new_file) = self.peek_cursor_up_file() {
+            let lines = self.search_result.files.get(new_file).expect("infallible");
+            let new_line = lines.iter().rfind(|line| line.hit).expect("infallible");
+            Some((new_file, new_line.number))
+        } else {
+            None
+        }
     }
 
     fn cursor_up_line(&mut self) {
-        let file = self.cursor.file.as_ref().expect("infallible");
-        let line_number = self.cursor.line_number.expect("infallible");
-
-        let lines = self.search_result.files.get(file).expect("infallible");
-
-        // TODO: optimize
-        for line in lines.iter().rev() {
-            if !line.hit {
-                continue;
-            }
-
-            if line_number > line.number {
-                self.cursor.line_number = Some(line.number);
-                self.dirty = true;
-                return;
-            }
-        }
-
-        let current = self.cursor.clone();
-        self.cursor_left();
-        self.cursor_up();
-        self.cursor_right();
-        if current.file == self.cursor.file {
-            self.cursor = current;
-        } else {
-            let file = self.cursor.file.as_ref().expect("infallible");
-            let lines = self.search_result.files.get(file).expect("infallible");
-            self.cursor.line_number = lines.iter().rev().find(|l| l.hit).map(|l| l.number);
+        if let Some((file, line_number)) = self.peek_cursor_up_line() {
+            self.cursor.file = Some(file.clone());
+            self.cursor.line_number = Some(line_number);
+            self.dirty = true;
         }
     }
 
@@ -347,35 +339,30 @@ impl AppState {
         }
     }
 
-    fn peek_cursor_down_line(&self) -> Option<usize> {
-        Some(0) // TODO
+    fn peek_cursor_down_line(&self) -> Option<(&PathBuf, NonZeroUsize)> {
+        let file = self.cursor.file.as_ref()?;
+        let line_number = self.cursor.line_number?;
+        let lines = self.search_result.files.get(file).expect("infallible");
+
+        if let Some(new_line) = lines
+            .iter()
+            .find(|line| line.hit && line.number > line_number)
+        {
+            Some((file, new_line.number))
+        } else if let Some(new_file) = self.peek_cursor_down_file() {
+            let lines = self.search_result.files.get(new_file).expect("infallible");
+            let new_line = lines.iter().find(|line| line.hit).expect("infallible");
+            Some((new_file, new_line.number))
+        } else {
+            None
+        }
     }
 
     fn cursor_down_line(&mut self) {
-        let file = self.cursor.file.as_ref().expect("infallible");
-        let line_number = self.cursor.line_number.expect("infallible");
-
-        let lines = self.search_result.files.get(file).expect("infallible");
-
-        // TODO: optimize
-        for line in lines {
-            if !line.hit {
-                continue;
-            }
-
-            if line_number < line.number {
-                self.cursor.line_number = Some(line.number);
-                self.dirty = true;
-                return;
-            }
-        }
-
-        let current = self.cursor.clone();
-        self.cursor_left();
-        self.cursor_down();
-        self.cursor_right();
-        if current.file == self.cursor.file {
-            self.cursor = current;
+        if let Some((file, line_number)) = self.peek_cursor_down_line() {
+            self.cursor.file = Some(file.clone());
+            self.cursor.line_number = Some(line_number);
+            self.dirty = true;
         }
     }
 
