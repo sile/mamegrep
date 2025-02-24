@@ -124,8 +124,13 @@ impl MatchLine {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ContextLines(pub usize);
+
+impl ContextLines {
+    pub const MIN: Self = Self(1);
+    pub const MAX: Self = Self(99);
+}
 
 impl Default for ContextLines {
     fn default() -> Self {

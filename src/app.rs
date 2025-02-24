@@ -210,6 +210,20 @@ impl AppState {
         }
     }
 
+    pub fn set_focus(&mut self, focus: Focus) {
+        self.focus = focus;
+        self.dirty = true;
+    }
+
+    pub fn flip_grep_flag<F>(&mut self, f: F) -> orfail::Result<()>
+    where
+        F: FnOnce(&mut GrepOptions) -> &mut bool,
+    {
+        let flag = f(&mut self.grep);
+        *flag = !*flag;
+        self.regrep().or_fail()
+    }
+
     pub fn regrep(&mut self) -> orfail::Result<()> {
         self.search_result = self.grep.call().or_fail()?;
         self.dirty = true;
