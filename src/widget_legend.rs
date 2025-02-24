@@ -93,8 +93,9 @@ impl LegendWidget {
 
         if state.cursor.is_file_level() {
             canvas.drawln(Token::new("| (t)oggle       [TAB]"));
-            canvas.drawln(Token::new("| (T)oggle all        "));
         }
+        canvas.drawln(Token::new("| (T)oggle all        "));
+
         if state.can_cursor_up() {
             canvas.drawln(Token::new("| (↑)            [C-p]"));
         }

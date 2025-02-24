@@ -259,21 +259,22 @@ impl AppState {
     }
 
     pub fn toggle_all_expansion(&mut self) {
-        if self.cursor.is_line_level() {
-            return;
+        fn can_collapse(cursor: &Cursor, file: &PathBuf) -> bool {
+            cursor.is_file_level() || cursor.file.as_ref() != Some(file)
         }
 
-        if self
+        let target_files = self
             .search_result
             .files
             .keys()
+            .filter(|file| can_collapse(&self.cursor, file));
+        if target_files
+            .clone()
             .all(|file| self.collapsed.contains(file))
         {
             self.collapsed.clear();
         } else {
-            for file in self.search_result.files.keys() {
-                self.collapsed.insert(file.clone());
-            }
+            self.collapsed.extend(target_files.cloned());
         }
 
         self.dirty = true;
@@ -325,7 +326,9 @@ impl AppState {
 
     fn cursor_up_line(&mut self) {
         if let Some((file, line_number)) = self.peek_cursor_up_line() {
-            self.cursor.file = Some(file.clone());
+            let file = file.clone();
+            self.collapsed.remove(&file);
+            self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
             self.dirty = true;
         }
@@ -360,7 +363,9 @@ impl AppState {
 
     fn cursor_down_line(&mut self) {
         if let Some((file, line_number)) = self.peek_cursor_down_line() {
-            self.cursor.file = Some(file.clone());
+            let file = file.clone();
+            self.collapsed.remove(&file);
+            self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
             self.dirty = true;
         }
@@ -437,6 +442,7 @@ impl AppState {
 
             if let Some(new_file) = &new_file {
                 if self.cursor.line_number.is_some() {
+                    self.collapsed.remove(new_file);
                     self.cursor.line_number = self
                         .search_result
                         .files
