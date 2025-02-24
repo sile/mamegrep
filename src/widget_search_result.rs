@@ -39,8 +39,9 @@ impl SearchResultWidget {
     fn render_files(&self, state: &AppState, canvas: &mut Canvas) {
         for (file_index, (file, lines)) in state.search_result.files.iter().enumerate() {
             state.cursor.render_for_file(canvas, file);
+            canvas.draw(Token::new(format!("{}# ", file_index + 1)));
             canvas.draw(Token::with_style(
-                format!("{file_index}# {}", file.display()),
+                format!("{}", file.display()),
                 TokenStyle::Underlined,
             ));
             canvas.draw(Token::new(format!(
