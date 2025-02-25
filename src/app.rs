@@ -471,7 +471,7 @@ impl AppState {
         let lines = self.search_result.files.get(file).expect("infallible");
         self.cursor.line_number = lines
             .iter()
-            .find(|line| line.hit && old_line_number >= line.number)
+            .rfind(|line| line.hit && old_line_number >= line.number)
             .or_else(|| lines.iter().find(|line| line.hit))
             .map(|line| line.number);
     }
