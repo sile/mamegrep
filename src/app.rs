@@ -59,7 +59,7 @@ impl App {
 
         std::mem::drop(self.terminal);
 
-        print!("$ git");
+        print!("git");
         for arg in self.state.grep.args(Focus::default()) {
             print!(" {}", arg.quoted_text());
         }
