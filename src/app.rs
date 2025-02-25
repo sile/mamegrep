@@ -295,8 +295,7 @@ impl AppState {
         self.search_result
             .files
             .range::<PathBuf, RangeTo<_>>(..file)
-            .rev()
-            .next()
+            .next_back()
             .map(|(k, _)| k)
     }
 

@@ -116,7 +116,7 @@ impl CommandEditorWidget {
             canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Plain));
         }
 
-        canvas.draw(Token::new(format!("$ git")));
+        canvas.draw(Token::new("$ git"));
 
         self.render_grep_args(state, canvas, &state.grep.args(state.focus));
     }

@@ -204,7 +204,7 @@ impl GrepArg {
     }
 
     pub fn prev_char(&self, i: usize) -> Option<char> {
-        self.text[..i].chars().rev().next()
+        self.text[..i].chars().next_back()
     }
 
     pub fn is_enabled(&self, focus: Focus) -> bool {
@@ -274,14 +274,14 @@ pub enum GrepArgKind {
 
 impl GrepArgKind {
     pub fn is_focused(self, focus: Focus) -> bool {
-        match (self, focus) {
+        matches!(
+            (self, focus),
             (Self::Pattern, Focus::Pattern)
-            | (Self::AndPattern, Focus::AndPattern)
-            | (Self::NotPattern, Focus::NotPattern)
-            | (Self::Revision, Focus::Revision)
-            | (Self::Path, Focus::Path) => true,
-            _ => false,
-        }
+                | (Self::AndPattern, Focus::AndPattern)
+                | (Self::NotPattern, Focus::NotPattern)
+                | (Self::Revision, Focus::Revision)
+                | (Self::Path, Focus::Path)
+        )
     }
 }
 
