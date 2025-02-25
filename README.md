@@ -6,7 +6,7 @@ mamegrep
 [![Actions Status](https://github.com/sile/mamegrep/workflows/CI/badge.svg)](https://github.com/sile/mamegrep/actions)
 ![License](https://img.shields.io/crates/l/mamegrep)
 
-A TUI tool for `$ git grep` to easily edit search patterns and view results.
+A TUI tool that provides an interactive interface for `$ git grep`, enabling users to easily edit search patterns and view the results.
 
 ![mamegrep](mamegrep.gif)
 
@@ -42,7 +42,7 @@ Basic Usage
 To use `mamegrep`, execute the command within a Git directory.
 Once launched, key bindings will appear in the top-right corner of the terminal.
 
-To perform a search, enter your search pattern and press the Enter key. 
+To perform a search, enter your search pattern and press the Enter key.
 If `mamegrep` exits, the equivalent `$ git grep` command used to generate the result will be displayed in the standard output.
 
 You Might Also Be Interested In
