@@ -8,6 +8,8 @@ mamegrep
 
 A TUI tool for `$ git grep` to easily edit search patterns and view results.
 
+![mamegrep](mamegrep.gif)
+
 Installation
 ------------
 
