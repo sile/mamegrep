@@ -28,7 +28,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(initial_pattern: Option<String>) -> orfail::Result<Self> {
+    pub fn new(initial_options: GrepOptions) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
             exit: false,
@@ -38,8 +38,8 @@ impl App {
             search_result: SearchResultWidget::default(),
         };
 
-        if let Some(pattern) = initial_pattern {
-            this.state.grep.pattern.text = pattern;
+        this.state.grep = initial_options;
+        if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
         } else {
             this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))

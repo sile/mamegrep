@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.31", features = ["derive"] }
 crossterm = "0.28.1"
 orfail = "1.1.0"
 unicode-width = "0.2.0"
