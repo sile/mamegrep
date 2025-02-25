@@ -17,6 +17,7 @@ fn main() -> orfail::Result<()> {
     Ok(())
 }
 
+// TODO: use clap and add other args
 #[derive(Default)]
 struct Args {
     pattern: Option<String>,

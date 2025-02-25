@@ -19,9 +19,18 @@ impl SearchResultWidget {
             self.render_error(state, canvas, error);
             return;
         }
-
         self.render_header_line(state, canvas);
-        self.render_files(state, canvas);
+
+        let mut size = canvas.frame_size();
+        size.rows = size.rows.saturating_sub(canvas.cursor().row);
+
+        let mut tmp_canvas = Canvas::new(size);
+        tmp_canvas.set_auto_scroll(true);
+        self.render_files(state, &mut tmp_canvas);
+
+        for line in tmp_canvas.into_frame().into_lines() {
+            canvas.draw_frame_line(line);
+        }
     }
 
     fn render_error(&self, state: &AppState, canvas: &mut Canvas, error: &str) {
@@ -59,7 +68,9 @@ impl SearchResultWidget {
                 break;
             }
 
-            state.cursor.render_for_file(canvas, file);
+            if state.cursor.render_for_file(canvas, file) {
+                self.recenter(canvas);
+            }
             canvas.draw(Token::new(format!("{}# ", file_index + 1)));
             canvas.draw(Token::with_style(
                 format!("{}", file.display()),
@@ -98,8 +109,9 @@ impl SearchResultWidget {
     }
 
     fn render_line(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, line: &Line) {
-        state.cursor.render_for_line(canvas, file, line.number);
-
+        if state.cursor.render_for_line(canvas, file, line.number) {
+            self.recenter(canvas);
+        }
         canvas.draw(Token::new(format!(
             "[{:>width$}] ",
             line.number,
@@ -109,6 +121,19 @@ impl SearchResultWidget {
         canvas.draw(Token::new(&line.text));
         self.highlight_line(state, canvas, file, line, col_offset);
         canvas.newline();
+    }
+
+    fn recenter(&self, canvas: &mut Canvas) {
+        canvas.set_auto_scroll(false);
+
+        let current_row = canvas.cursor().row;
+        let frame_rows = canvas.frame_size().rows;
+        let frame_half_rows = frame_rows / 2;
+        canvas.scroll(
+            current_row
+                .saturating_sub(frame_half_rows)
+                .min(frame_half_rows),
+        );
     }
 
     fn highlight_line(
@@ -207,7 +232,6 @@ impl SearchResultWidget {
         }
 
         match event.code {
-            // TODO: recenter
             KeyCode::Char('/' | 'e') => state.set_focus(Focus::Pattern),
             KeyCode::Char('a') => state.set_focus(Focus::AndPattern),
             KeyCode::Char('n') => state.set_focus(Focus::NotPattern),
@@ -270,19 +294,28 @@ impl Cursor {
         self.line_number.is_some()
     }
 
-    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) {
+    pub fn render_for_file(&self, canvas: &mut Canvas, file: &PathBuf) -> bool {
         if self.is_file_level() && self.file.as_ref() == Some(file) {
             canvas.draw(Token::new("-> "));
+            true
         } else {
             canvas.draw(Token::new("   "));
+            false
         }
     }
 
-    pub fn render_for_line(&self, canvas: &mut Canvas, file: &PathBuf, line_number: NonZeroUsize) {
+    pub fn render_for_line(
+        &self,
+        canvas: &mut Canvas,
+        file: &PathBuf,
+        line_number: NonZeroUsize,
+    ) -> bool {
         if self.is_line_focused(file, line_number) {
             canvas.draw(Token::new("---> "));
+            true
         } else {
             canvas.draw(Token::new("     "));
+            false
         }
     }
 

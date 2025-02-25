@@ -80,9 +80,6 @@ impl LegendWidget {
             TokenStyle::Bold,
         ));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
-        if state.can_recenter() {
-            canvas.drawln(Token::new("| recenter     [l,C-l]"));
-        }
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| (e)dit pattern   [/]"));
         canvas.drawln(Token::new("| edit (a)nd pattern  "));

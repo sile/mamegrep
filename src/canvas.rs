@@ -1,4 +1,4 @@
-use std::num::NonZeroUsize;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
@@ -9,6 +9,8 @@ pub struct Canvas {
     frame: Frame,
     cursor: TokenPosition,
     col_offset: usize,
+    row_offset: usize,
+    auto_scroll: bool,
 }
 
 impl Canvas {
@@ -17,6 +19,8 @@ impl Canvas {
             frame: Frame::new(frame_size),
             cursor: TokenPosition::ORIGIN,
             col_offset: 0,
+            row_offset: 0,
+            auto_scroll: false,
         }
     }
 
@@ -25,7 +29,11 @@ impl Canvas {
     }
 
     pub fn is_frame_exceeded(&self) -> bool {
-        self.cursor.row >= self.frame.size.rows
+        if self.auto_scroll {
+            false
+        } else {
+            self.cursor.row.saturating_sub(self.row_offset) >= self.frame.size.rows
+        }
     }
 
     pub fn cursor(&self) -> TokenPosition {
@@ -61,35 +69,66 @@ impl Canvas {
     }
 
     pub fn draw_at(&mut self, mut position: TokenPosition, token: Token) {
-        if self.frame.size.rows <= position.row {
+        if position.row < self.row_offset {
             return;
+        }
+
+        if let Some(n) = (position.row - self.row_offset).checked_sub(self.frame.size.rows) {
+            if self.auto_scroll {
+                self.scroll(n + 1);
+            } else {
+                return;
+            }
         }
 
         position.col += self.col_offset;
 
-        let i = position.row;
+        let i = position.row - self.row_offset;
         let line = &mut self.frame.lines[i];
         line.draw_token(position.col, token);
         line.split_off(self.frame.size.cols);
     }
 
+    pub fn draw_frame_line(&mut self, line: FrameLine) {
+        if self.cursor.row < self.frame.lines.len() {
+            self.frame.lines[self.cursor.row] = line;
+            self.cursor.row += 1;
+        }
+    }
+
     pub fn into_frame(self) -> Frame {
         self.frame
+    }
+
+    pub fn set_auto_scroll(&mut self, auto: bool) {
+        self.auto_scroll = auto;
+    }
+
+    pub fn scroll(&mut self, n: usize) {
+        for _ in 0..n {
+            self.frame.lines.pop_front();
+            self.frame.lines.push_back(FrameLine::new());
+            self.row_offset += 1;
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Frame {
     size: TerminalSize,
-    lines: Vec<FrameLine>,
+    lines: VecDeque<FrameLine>,
 }
 
 impl Frame {
     pub fn new(size: TerminalSize) -> Self {
         Self {
             size,
-            lines: vec![FrameLine::new(); size.rows],
+            lines: vec![FrameLine::new(); size.rows].into(),
         }
+    }
+
+    pub fn into_lines(self) -> impl Iterator<Item = FrameLine> {
+        self.lines.into_iter()
     }
 
     pub fn dirty_lines<'a>(
