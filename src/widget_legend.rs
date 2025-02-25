@@ -50,10 +50,8 @@ impl LegendWidget {
     fn render_editing_legend(&self, _state: &AppState, canvas: &mut Canvas) {
         canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
-        canvas.drawln(Token::with_style(
-            "|[ACTIONS]            ",
-            TokenStyle::Bold,
-        ));
+        canvas.draw(Token::new("|"));
+        canvas.drawln(Token::with_style("[ACTIONS]            ", TokenStyle::Bold));
         canvas.drawln(Token::new("| quit       [ESC,C-c]"));
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| search       [ENTER]"));
@@ -75,10 +73,8 @@ impl LegendWidget {
         }
         canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
-        canvas.drawln(Token::with_style(
-            "|[ACTIONS]            ",
-            TokenStyle::Bold,
-        ));
+        canvas.draw(Token::new("|"));
+        canvas.drawln(Token::with_style("[ACTIONS]            ", TokenStyle::Bold));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
         canvas.drawln(Token::new("|                     "));
         canvas.drawln(Token::new("| (e)dit pattern   [/]"));
@@ -117,10 +113,8 @@ impl LegendWidget {
             canvas.drawln(Token::new("|                     "));
         }
 
-        canvas.drawln(Token::with_style(
-            "|[GIT GREP FLAGS]     ",
-            TokenStyle::Bold,
-        ));
+        canvas.draw(Token::new("|"));
+        canvas.drawln(Token::with_style("[GIT GREP FLAGS]     ", TokenStyle::Bold));
 
         if state.grep.ignore_case {
             canvas.drawln(Token::new("|o --(i)gnore-case    "));
