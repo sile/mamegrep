@@ -76,7 +76,7 @@ impl App {
         self.command_editor
             .set_available_cols(self.legend.remaining_cols(self.terminal.size()));
 
-        let mut canvas = Canvas::new(0, self.terminal.size());
+        let mut canvas = Canvas::new(self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
         canvas.newline();
         self.search_result.render(&self.state, &mut canvas);

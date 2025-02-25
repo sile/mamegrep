@@ -1,4 +1,4 @@
-use std::{num::NonZeroUsize, ops::Range};
+use std::num::NonZeroUsize;
 
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
@@ -7,25 +7,16 @@ use crate::terminal::TerminalSize;
 #[derive(Debug)]
 pub struct Canvas {
     frame: Frame,
-    frame_row_offset: usize,
     cursor: TokenPosition,
     col_offset: usize,
 }
 
 impl Canvas {
-    pub fn new(frame_row_offset: usize, frame_size: TerminalSize) -> Self {
+    pub fn new(frame_size: TerminalSize) -> Self {
         Self {
             frame: Frame::new(frame_size),
-            frame_row_offset,
             cursor: TokenPosition::ORIGIN,
             col_offset: 0,
-        }
-    }
-
-    pub fn frame_row_range(&self) -> Range<usize> {
-        Range {
-            start: self.frame_row_offset,
-            end: self.frame_row_offset + self.frame.size.rows,
         }
     }
 
@@ -34,7 +25,7 @@ impl Canvas {
     }
 
     pub fn is_frame_exceeded(&self) -> bool {
-        self.cursor.row >= self.frame_row_range().end
+        self.cursor.row >= self.frame.size.rows
     }
 
     pub fn cursor(&self) -> TokenPosition {
@@ -70,13 +61,13 @@ impl Canvas {
     }
 
     pub fn draw_at(&mut self, mut position: TokenPosition, token: Token) {
-        if !self.frame_row_range().contains(&position.row) {
+        if self.frame.size.rows <= position.row {
             return;
         }
 
         position.col += self.col_offset;
 
-        let i = position.row - self.frame_row_offset;
+        let i = position.row;
         let line = &mut self.frame.lines[i];
         line.draw_token(position.col, token);
         line.split_off(self.frame.size.cols);

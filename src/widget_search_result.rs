@@ -55,7 +55,11 @@ impl SearchResultWidget {
 
     fn render_files(&self, state: &AppState, canvas: &mut Canvas) {
         for (file_index, (file, lines)) in state.search_result.files.iter().enumerate() {
-            // TODO: break if get out of screen
+            // TODO: skip if need
+            if canvas.is_frame_exceeded() {
+                break;
+            }
+
             state.cursor.render_for_file(canvas, file);
             canvas.draw(Token::new(format!("{}# ", file_index + 1)));
             canvas.draw(Token::with_style(
@@ -79,6 +83,10 @@ impl SearchResultWidget {
 
     fn render_lines(&self, state: &AppState, canvas: &mut Canvas, file: &PathBuf, lines: &[Line]) {
         for line in lines.iter().filter(|l| l.hit) {
+            if canvas.is_frame_exceeded() {
+                break;
+            }
+
             let focused = state.cursor.is_line_focused(file, line.number);
             if focused {
                 self.render_before_lines(state, canvas, lines, line);
