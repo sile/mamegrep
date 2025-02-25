@@ -80,7 +80,7 @@ impl LegendWidget {
             TokenStyle::Bold,
         ));
         canvas.drawln(Token::new("| (q)uit     [ESC,C-c]"));
-        if state.can_scroll() {
+        if state.can_recenter() {
             canvas.drawln(Token::new("| recenter     [l,C-l]"));
         }
         canvas.drawln(Token::new("|                     "));
@@ -113,7 +113,7 @@ impl LegendWidget {
         if state.cursor.is_line_level() {
             canvas.drawln(Token::new("| (+|-) context lines "));
             canvas.drawln(Token::new(format!(
-                "|                ({:2}) ",
+                "|                 ({})",
                 state.grep.context_lines.0
             )));
         } else if !state.search_result.is_empty() {

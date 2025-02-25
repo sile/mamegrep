@@ -161,7 +161,7 @@ pub struct ContextLines(pub usize);
 
 impl ContextLines {
     pub const MIN: Self = Self(0);
-    pub const MAX: Self = Self(99);
+    pub const MAX: Self = Self(9);
 }
 
 impl Default for ContextLines {

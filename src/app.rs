@@ -182,7 +182,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn can_scroll(&self) -> bool {
+    pub fn can_recenter(&self) -> bool {
         // TODO
         !self.search_result.is_empty()
     }

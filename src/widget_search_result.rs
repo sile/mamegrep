@@ -55,7 +55,6 @@ impl SearchResultWidget {
 
     fn render_files(&self, state: &AppState, canvas: &mut Canvas) {
         for (file_index, (file, lines)) in state.search_result.files.iter().enumerate() {
-            // TODO: skip if need
             if canvas.is_frame_exceeded() {
                 break;
             }
