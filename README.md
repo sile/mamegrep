@@ -6,7 +6,7 @@ mamegrep
 [![Actions Status](https://github.com/sile/mamegrep/workflows/CI/badge.svg)](https://github.com/sile/mamegrep/actions)
 ![License](https://img.shields.io/crates/l/mamegrep)
 
-`mamegrep` offers an interactive terminal interface for `$ git grep`, allowing users to easily edit search patterns and view results.
+`mamegrep` offers an interactive terminal interface (TUI) for `$ git grep`, allowing users to easily edit search patterns and view results.
 
 ![mamegrep](mamegrep.gif)
 
