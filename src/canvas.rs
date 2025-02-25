@@ -305,16 +305,14 @@ mod tests {
         let size = TerminalSize { rows: 2, cols: 4 };
 
         // No dirty lines.
-        let frame0 = Canvas::new(1, size).into_frame();
-        let frame1 = Canvas::new(1, size).into_frame();
+        let frame0 = Canvas::new(size).into_frame();
+        let frame1 = Canvas::new(size).into_frame();
         assert_eq!(frame1.dirty_lines(&frame0).count(), 0);
 
         // Draw lines.
-        let mut canvas = Canvas::new(1, size);
-        canvas.draw_at(TokenPosition::row(0), Token::new("out of range"));
-        canvas.draw_at(TokenPosition::row(1), Token::new("hello"));
-        canvas.draw_at(TokenPosition::row_col(2, 2), Token::new("world"));
-        canvas.draw_at(TokenPosition::row(3), Token::new("out of range"));
+        let mut canvas = Canvas::new(size);
+        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
+        canvas.draw_at(TokenPosition::row_col(1, 2), Token::new("world"));
 
         let frame2 = canvas.into_frame();
         assert_eq!(frame2.dirty_lines(&frame1).count(), 2);
@@ -327,8 +325,8 @@ mod tests {
         );
 
         // Draw another lines.
-        let mut canvas = Canvas::new(1, size);
-        canvas.draw_at(TokenPosition::row(1), Token::new("hello"));
+        let mut canvas = Canvas::new(size);
+        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
 
         let frame3 = canvas.into_frame();
         assert_eq!(frame3.dirty_lines(&frame2).count(), 1);

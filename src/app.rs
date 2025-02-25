@@ -441,21 +441,8 @@ impl AppState {
                 )
                 .next()
                 .map(|(k, _)| k.clone());
-
-            if let Some(new_file) = &new_file {
-                if self.cursor.line_number.is_some() {
-                    self.collapsed.remove(new_file);
-                    self.cursor.line_number = self
-                        .search_result
-                        .files
-                        .get(new_file)
-                        .expect("infallible")
-                        .get(0)
-                        .map(|line| line.number);
-                }
-            }
-
             self.cursor.file = new_file;
+            self.cursor.line_number = None;
             return;
         }
 
