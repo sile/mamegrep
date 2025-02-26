@@ -92,16 +92,16 @@ impl LegendWidget {
         }
 
         if state.can_cursor_up() {
-            canvas.drawln(Token::new("| (↑)            [C-p]"));
+            canvas.drawln(Token::new("| (↑) / k        [C-p]"));
         }
         if state.can_cursor_down() {
-            canvas.drawln(Token::new("| (↓)            [C-n]"));
+            canvas.drawln(Token::new("| (↓) / j        [C-n]"));
         }
         if state.cursor.is_line_level() {
-            canvas.drawln(Token::new("| (←)            [C-b]"));
+            canvas.drawln(Token::new("| (←) / h        [C-b]"));
         }
         if state.cursor.is_file_level() {
-            canvas.drawln(Token::new("| (→)            [C-f]"));
+            canvas.drawln(Token::new("| (→) / l        [C-f]"));
         }
         if state.cursor.is_line_level() {
             canvas.drawln(Token::new("| (+|-) context lines "));
@@ -163,6 +163,6 @@ impl LegendWidget {
             }
         }
 
-        canvas.drawln(Token::new("+-------(h)ide--------"));
+        canvas.drawln(Token::new("+-------(H)ide--------"));
     }
 }

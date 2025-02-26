@@ -264,9 +264,13 @@ impl SearchResultWidget {
                 state.regrep().or_fail()?;
             }
             KeyCode::Up => state.cursor_up(),
+            KeyCode::Char('k') => state.cursor_up(),
             KeyCode::Down => state.cursor_down(),
+            KeyCode::Char('j') => state.cursor_down(),
             KeyCode::Right => state.cursor_right(),
+            KeyCode::Char('l') => state.cursor_right(),
             KeyCode::Left => state.cursor_left(),
+            KeyCode::Char('h') => state.cursor_left(),
             KeyCode::Char('t') | KeyCode::Tab => {
                 state.toggle_expansion();
             }
