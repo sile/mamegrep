@@ -35,7 +35,7 @@ impl LegendWidget {
             if editing {
                 canvas.drawln(Token::new("+----------"));
             } else {
-                canvas.drawln(Token::new("+- s(h)ow -"));
+                canvas.drawln(Token::new("+- s(H)ow -"));
             }
             return;
         }
