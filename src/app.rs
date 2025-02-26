@@ -116,7 +116,7 @@ impl App {
             KeyCode::Char('c') if ctrl => {
                 self.exit = true;
             }
-            KeyCode::Char('h') if !editing => {
+            KeyCode::Char('H') if !editing => {
                 self.legend.hide = !self.legend.hide;
                 self.state.dirty = true;
             }
