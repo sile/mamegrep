@@ -19,7 +19,7 @@ Pre-built binaries for Linux and MacOS are available in [the releases page](http
 
 ```console
 // An example to download the binary for Linux.
-$ VERSION=0.1.0
+$ VERSION=0.2.0
 $ curl -L https://github.com/sile/mamegrep/releases/download/v${VERSION}/mamegrep-${VERSION}.x86_64-unknown-linux-musl -o mamegrep
 $ chmod +x mamegrep
 $ ./mamegrep -h
