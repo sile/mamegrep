@@ -1,7 +1,7 @@
 [package]
 name = "mamegrep"
 version = "0.2.1"
-edition = "2021"
+edition = "2024"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 license = "MIT"
 description = "A TUI tool for `$ git grep` to easily edit search patterns and view results"
