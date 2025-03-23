@@ -8,6 +8,7 @@ description = "A TUI tool for `$ git grep` to easily edit search patterns and vi
 homepage = "https://github.com/sile/mamegrep"
 repository = "https://github.com/sile/mamegrep"
 readme = "README.md"
+categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.5.31", features = ["derive"] }
