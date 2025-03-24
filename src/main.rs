@@ -1,4 +1,3 @@
-use clap::Parser;
 use mamegrep::{
     app::App,
     git::{self, GrepOptions},
@@ -6,51 +5,61 @@ use mamegrep::{
 
 use orfail::OrFail;
 
-/// Git grep TUI frontend.
-#[derive(Parser)]
-#[clap(version)]
-struct Args {
-    /// Search pattern.
-    pattern: Option<String>,
+fn main() -> noargs::Result<()> {
+    let mut options = GrepOptions::default();
 
-    /// `--and` search pattern.
-    #[clap(short, long)]
-    and_pattern: Option<String>,
-
-    /// `--not` search pattern.
-    #[clap(short, long)]
-    not_pattern: Option<String>,
-
-    /// Revision.
-    #[clap(short, long)]
-    revision: Option<String>,
-
-    /// Path.
-    #[clap(short, long)]
-    path: Option<String>,
-}
-
-impl Args {
-    fn into_grep_options(self) -> GrepOptions {
-        let mut options = GrepOptions::default();
-        options.pattern.text = self.pattern.unwrap_or_default();
-        options.and_pattern.text = self.and_pattern.unwrap_or_default();
-        options.not_pattern.text = self.not_pattern.unwrap_or_default();
-        options.revision.text = self.revision.unwrap_or_default();
-        options.path.text = self.path.unwrap_or_default();
-        options
+    let mut args = noargs::args();
+    if noargs::VERSION_FLAG.take(&mut args).is_present() {
+        println!("{}", args.metadata().version_line());
+        return Ok(());
     }
-}
-
-fn main() -> orfail::Result<()> {
-    let args = Args::parse();
+    if noargs::HELP_FLAG.take(&mut args).is_present() {
+        args.metadata_mut().help_mode = true;
+    }
+    options.and_pattern.text = noargs::opt("and-pattern")
+        .short('a')
+        .ty("PATTERN")
+        .doc("`--and` search pattern")
+        .take(&mut args)
+        .parse_if_present()?
+        .unwrap_or_default();
+    options.not_pattern.text = noargs::opt("not-pattern")
+        .short('n')
+        .ty("PATTERN")
+        .doc("`--not` search pattern")
+        .take(&mut args)
+        .parse_if_present()?
+        .unwrap_or_default();
+    options.revision.text = noargs::opt("revision")
+        .short('r')
+        .ty("REVISION")
+        .doc("Revision")
+        .take(&mut args)
+        .parse_if_present()?
+        .unwrap_or_default();
+    options.path.text = noargs::opt("path")
+        .short('p')
+        .ty("PATH")
+        .doc("Path")
+        .take(&mut args)
+        .parse_if_present()?
+        .unwrap_or_default();
+    options.pattern.text = noargs::arg("PATTERN")
+        .doc("Search pattern")
+        .take(&mut args)
+        .parse_if_present()?
+        .unwrap_or_default();
+    if let Some(help) = args.finish()? {
+        println!("{help}");
+        return Ok(());
+    }
 
     if !git::is_available() {
         eprintln!("error: no `git` command found, or not a Git directory");
         std::process::exit(1);
     };
 
-    let app = App::new(args.into_grep_options()).or_fail()?;
+    let app = App::new(options).or_fail()?;
     app.run().or_fail()?;
 
     Ok(())
