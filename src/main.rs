@@ -8,7 +8,7 @@ use orfail::OrFail;
 fn main() -> noargs::Result<()> {
     let mut options = GrepOptions::default();
 
-    let mut args = noargs::args();
+    let mut args = noargs::raw_args();
     args.metadata_mut().app_name = env!("CARGO_PKG_NAME");
     args.metadata_mut().app_description = env!("CARGO_PKG_DESCRIPTION");
     if noargs::VERSION_FLAG.take(&mut args).is_present() {
