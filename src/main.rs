@@ -52,7 +52,7 @@ fn main() -> noargs::Result<()> {
         .parse_if_present()?
         .unwrap_or_default();
     if let Some(help) = args.finish()? {
-        println!("{help}");
+        print!("{help}");
         return Ok(());
     }
 
