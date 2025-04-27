@@ -15,41 +15,40 @@ fn main() -> noargs::Result<()> {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
-    if noargs::HELP_FLAG.take(&mut args).is_present() {
-        args.metadata_mut().help_mode = true;
-    }
+    noargs::HELP_FLAG.take_help(&mut args).is_present();
+
     options.and_pattern.text = noargs::opt("and-pattern")
         .short('a')
         .ty("PATTERN")
         .doc("`--and` search pattern")
         .take(&mut args)
-        .parse_if_present()?
+        .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
     options.not_pattern.text = noargs::opt("not-pattern")
         .short('n')
         .ty("PATTERN")
         .doc("`--not` search pattern")
         .take(&mut args)
-        .parse_if_present()?
+        .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
     options.revision.text = noargs::opt("revision")
         .short('r')
         .ty("REVISION")
         .doc("Revision")
         .take(&mut args)
-        .parse_if_present()?
+        .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
     options.path.text = noargs::opt("path")
         .short('p')
         .ty("PATH")
         .doc("Path")
         .take(&mut args)
-        .parse_if_present()?
+        .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
     options.pattern.text = noargs::arg("PATTERN")
         .doc("Search pattern")
         .take(&mut args)
-        .parse_if_present()?
+        .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
     if let Some(help) = args.finish()? {
         print!("{help}");

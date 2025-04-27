@@ -107,9 +107,9 @@ dependencies = [
 
 [[package]]
 name = "noargs"
-version = "0.1.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e48effe0fc239b0801a8308b5767e9623934ba9957ba11ecaa858dfc91cc736b"
+checksum = "9a0c67c67bde59ae289ec6d68089f3e399b9cb7a2941875d1e94a1123c401308"
 
 [[package]]
 name = "orfail"
