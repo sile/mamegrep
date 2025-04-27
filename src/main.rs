@@ -45,6 +45,11 @@ fn main() -> noargs::Result<()> {
         .take(&mut args)
         .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
+    let hide_legend = noargs::flag("hide-legend")
+        .doc("Hide the legend by default")
+        .env("MAMEGREP_HIDE_LEGEND")
+        .take(&mut args)
+        .is_present();
     options.pattern.text = noargs::arg("PATTERN")
         .doc("Search pattern")
         .take(&mut args)
@@ -60,7 +65,7 @@ fn main() -> noargs::Result<()> {
         std::process::exit(1);
     };
 
-    let app = App::new(options).or_fail()?;
+    let app = App::new(options, hide_legend).or_fail()?;
     app.run().or_fail()?;
 
     Ok(())
