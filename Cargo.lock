@@ -90,6 +90,7 @@ dependencies = [
  "crossterm",
  "noargs",
  "orfail",
+ "tuinix",
  "unicode-width",
 ]
 
@@ -203,6 +204,15 @@ name = "smallvec"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
+
+[[package]]
+name = "tuinix"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab5d251e3d9dc53b0edaf3c002c8920bee0ebb969e979aaf0304eb047381de56"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "unicode-width"
