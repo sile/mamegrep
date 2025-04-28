@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    canvas::{Canvas, TokenPosition},
+    canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
     widget_command_editor::CommandEditorWidget,
     widget_legend::LegendWidget,
@@ -14,7 +14,7 @@ use crate::{
 };
 
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput};
+use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
 
 #[derive(Debug)]
 pub struct App {
@@ -103,57 +103,46 @@ impl App {
     }
 
     fn handle_key_input(&mut self, input: KeyInput) -> orfail::Result<()> {
-        todo!()
-        // if event.kind != KeyEventKind::Press {
-        //     return Ok(());
-        // }
+        let editing = !matches!(self.state.focus, Focus::SearchResult);
+        match input.code {
+            KeyCode::Char('q') if !editing => {
+                self.exit = true;
+            }
+            KeyCode::Escape => {
+                self.exit = true;
+            }
+            KeyCode::Char('c') if input.ctrl => {
+                self.exit = true;
+            }
+            KeyCode::Char('H') if !editing => {
+                self.legend.hide = !self.legend.hide;
+                self.state.dirty = true;
+            }
+            _ => {
+                let old_focus = self.state.focus;
+                if editing {
+                    self.command_editor
+                        .handle_key_input(&mut self.state, input)
+                        .or_fail()?;
+                } else {
+                    self.search_result
+                        .handle_key_input(&mut self.state, input)
+                        .or_fail()?;
+                }
 
-        // let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
-        // let editing = !matches!(self.state.focus, Focus::SearchResult);
-        // match event.code {
-        //     KeyCode::Char('q') if !editing => {
-        //         self.exit = true;
-        //     }
-        //     KeyCode::Esc => {
-        //         self.exit = true;
-        //     }
-        //     KeyCode::Char('c') if ctrl => {
-        //         self.exit = true;
-        //     }
-        //     KeyCode::Char('H') if !editing => {
-        //         self.legend.hide = !self.legend.hide;
-        //         self.state.dirty = true;
-        //     }
-        //     _ => {
-        //         let old_focus = self.state.focus;
-        //         if editing {
-        //             self.command_editor
-        //                 .handle_key_event(&mut self.state, event)
-        //                 .or_fail()?;
-        //         } else {
-        //             self.search_result
-        //                 .handle_key_event(&mut self.state, event)
-        //                 .or_fail()?;
-        //         }
+                if old_focus != self.state.focus {
+                    self.command_editor.handle_focus_change(&mut self.state);
+                }
+            }
+        }
 
-        //         if old_focus != self.state.focus {
-        //             self.command_editor.handle_focus_change(&mut self.state);
-        //         }
-        //     }
-        // }
+        if self.state.dirty {
+            self.render().or_fail()?;
+            self.command_editor.update_cursor_position(&mut self.state);
+            self.terminal.set_cursor(self.state.show_terminal_cursor);
+        }
 
-        // if self.state.dirty {
-        //     self.render().or_fail()?;
-        //     self.command_editor.update_cursor_position(&mut self.state);
-
-        //     if let Some(position) = self.state.show_terminal_cursor {
-        //         self.terminal.show_cursor(position).or_fail()?;
-        //     } else {
-        //         self.terminal.hide_cursor().or_fail()?;
-        //     }
-        // }
-
-        // Ok(())
+        Ok(())
     }
 }
 
@@ -181,7 +170,7 @@ pub struct AppState {
     pub search_result: SearchResult,
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
-    pub show_terminal_cursor: Option<TokenPosition>,
+    pub show_terminal_cursor: Option<TerminalPosition>,
     pub focus: Focus,
 }
 

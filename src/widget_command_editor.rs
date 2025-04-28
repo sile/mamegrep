@@ -1,9 +1,9 @@
-use tuinix::KeyInput;
+use tuinix::{KeyInput, TerminalPosition};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::AppState,
-    canvas::{Canvas, Token, TokenPosition, TokenStyle},
+    canvas::{Canvas, Token, TokenStyle},
     git::GrepArg,
 };
 
@@ -148,7 +148,7 @@ impl CommandEditorWidget {
         }
 
         let multiline = self.is_multiline(state);
-        let mut pos = TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
+        let mut pos = TerminalPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
         for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
             if multiline && arg.multiline_head {
