@@ -8,17 +8,13 @@ use std::{
 use crate::{
     canvas::{Canvas, TokenPosition},
     git::{GrepArg, GrepOptions, SearchResult},
-    terminal::Terminal,
     widget_command_editor::CommandEditorWidget,
     widget_legend::LegendWidget,
     widget_search_result::{Cursor, SearchResultWidget},
 };
 
 use orfail::OrFail;
-
-// TODO:
-pub struct Event {}
-pub struct KeyEvent {}
+use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput};
 
 #[derive(Debug)]
 pub struct App {
@@ -32,32 +28,37 @@ pub struct App {
 
 impl App {
     pub fn new(initial_options: GrepOptions, hide_legend: bool) -> orfail::Result<Self> {
-        todo!()
-        // let mut this = Self {
-        //     terminal: Terminal::new().or_fail()?,
-        //     exit: false,
-        //     state: AppState::default(),
-        //     legend: LegendWidget { hide: hide_legend },
-        //     command_editor: CommandEditorWidget::default(),
-        //     search_result: SearchResultWidget::default(),
-        // };
+        let mut this = Self {
+            terminal: Terminal::new().or_fail()?,
+            exit: false,
+            state: AppState::default(),
+            legend: LegendWidget { hide: hide_legend },
+            command_editor: CommandEditorWidget::default(),
+            search_result: SearchResultWidget::default(),
+        };
 
-        // this.state.grep = initial_options;
-        // if !this.state.grep.pattern.is_empty() {
-        //     this.state.regrep().or_fail()?;
-        // } else {
-        //     this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
-        //         .or_fail()?;
-        // }
+        this.state.grep = initial_options;
+        if !this.state.grep.pattern.is_empty() {
+            this.state.regrep().or_fail()?;
+        } else {
+            this.handle_key_input(KeyInput {
+                alt: false,
+                ctrl: false,
+                code: KeyCode::Char('/'),
+            })
+            .or_fail()?;
+        }
 
-        // Ok(this)
+        Ok(this)
     }
 
     pub fn run(mut self) -> orfail::Result<()> {
         self.render().or_fail()?;
 
         while !self.exit {
-            let event = self.terminal.next_event().or_fail()?;
+            let Some(event) = self.terminal.poll_event(None).or_fail()? else {
+                continue;
+            };
             self.handle_event(event).or_fail()?;
         }
 
@@ -86,25 +87,22 @@ impl App {
         self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
 
-        self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
+        self.terminal.draw(canvas.into_frame()).or_fail()?;
 
         self.state.dirty = false;
         Ok(())
     }
 
-    fn handle_event(&mut self, event: Event) -> orfail::Result<()> {
-        // match event {
-        //     Event::FocusGained => Ok(()),
-        //     Event::FocusLost => Ok(()),
-        //     Event::Key(event) => self.handle_key_event(event).or_fail(),
-        //     Event::Mouse(_) => Ok(()),
-        //     Event::Paste(_) => Ok(()),
-        //     Event::Resize(_, _) => self.render().or_fail(),
-        // }
-        todo!()
+    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
+        match event {
+            TerminalEvent::Resize(_) => self.render().or_fail(),
+            TerminalEvent::Input(TerminalInput::Key(input)) => {
+                self.handle_key_input(input).or_fail()
+            }
+        }
     }
 
-    fn handle_key_event(&mut self, event: KeyEvent) -> orfail::Result<()> {
+    fn handle_key_input(&mut self, input: KeyInput) -> orfail::Result<()> {
         todo!()
         // if event.kind != KeyEventKind::Press {
         //     return Ok(());

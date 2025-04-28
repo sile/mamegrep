@@ -1,7 +1,8 @@
+use tuinix::TerminalSize;
+
 use crate::{
     app::AppState,
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
-    terminal::TerminalSize,
 };
 
 #[derive(Debug, Default)]

@@ -1,8 +1,8 @@
-use orfail::OrFail;
+use tuinix::KeyInput;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    app::{AppState, Focus, KeyEvent},
+    app::AppState,
     canvas::{Canvas, Token, TokenPosition, TokenStyle},
     git::GrepArg,
 };
@@ -31,10 +31,10 @@ impl CommandEditorWidget {
         state.dirty = true;
     }
 
-    pub fn handle_key_event(
+    pub fn handle_key_input(
         &mut self,
         state: &mut AppState,
-        event: KeyEvent,
+        input: KeyInput,
     ) -> orfail::Result<()> {
         // let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
         // match (ctrl, event.code) {

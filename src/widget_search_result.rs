@@ -1,10 +1,10 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
-use orfail::OrFail;
+use tuinix::KeyInput;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    app::{AppState, Focus, KeyEvent},
+    app::AppState,
     canvas::{Canvas, Token, TokenStyle},
     git::{ContextLines, Line},
 };
@@ -27,9 +27,10 @@ impl SearchResultWidget {
         tmp_canvas.set_auto_scroll(true);
         self.render_files(state, &mut tmp_canvas);
 
-        for line in tmp_canvas.into_frame().into_lines() {
-            canvas.draw_frame_line(line);
-        }
+        // TODO
+        // for line in tmp_canvas.into_frame().into_lines() {
+        //     canvas.draw_frame_line(line);
+        // }
     }
 
     fn render_error(&self, state: &AppState, canvas: &mut Canvas, error: &str) {
@@ -214,10 +215,10 @@ impl SearchResultWidget {
         canvas.newline();
     }
 
-    pub fn handle_key_event(
+    pub fn handle_key_input(
         &mut self,
         state: &mut AppState,
-        event: KeyEvent,
+        input: KeyInput,
     ) -> orfail::Result<()> {
         // if event.modifiers.contains(KeyModifiers::CONTROL) {
         //     match event.code {

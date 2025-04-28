@@ -1,8 +1,7 @@
 use std::{collections::VecDeque, num::NonZeroUsize};
 
+use tuinix::{TerminalFrame, TerminalSize};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
-
-use crate::terminal::TerminalSize;
 
 #[derive(Debug)]
 pub struct Canvas {
@@ -96,8 +95,8 @@ impl Canvas {
         }
     }
 
-    pub fn into_frame(self) -> Frame {
-        self.frame
+    pub fn into_frame(self) -> TerminalFrame {
+        todo!()
     }
 
     pub fn set_auto_scroll(&mut self, auto: bool) {
