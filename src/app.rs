@@ -14,8 +14,11 @@ use crate::{
     widget_search_result::{Cursor, SearchResultWidget},
 };
 
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use orfail::OrFail;
+
+// TODO:
+pub struct Event {}
+pub struct KeyEvent {}
 
 #[derive(Debug)]
 pub struct App {
@@ -29,24 +32,25 @@ pub struct App {
 
 impl App {
     pub fn new(initial_options: GrepOptions, hide_legend: bool) -> orfail::Result<Self> {
-        let mut this = Self {
-            terminal: Terminal::new().or_fail()?,
-            exit: false,
-            state: AppState::default(),
-            legend: LegendWidget { hide: hide_legend },
-            command_editor: CommandEditorWidget::default(),
-            search_result: SearchResultWidget::default(),
-        };
+        todo!()
+        // let mut this = Self {
+        //     terminal: Terminal::new().or_fail()?,
+        //     exit: false,
+        //     state: AppState::default(),
+        //     legend: LegendWidget { hide: hide_legend },
+        //     command_editor: CommandEditorWidget::default(),
+        //     search_result: SearchResultWidget::default(),
+        // };
 
-        this.state.grep = initial_options;
-        if !this.state.grep.pattern.is_empty() {
-            this.state.regrep().or_fail()?;
-        } else {
-            this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
-                .or_fail()?;
-        }
+        // this.state.grep = initial_options;
+        // if !this.state.grep.pattern.is_empty() {
+        //     this.state.regrep().or_fail()?;
+        // } else {
+        //     this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
+        //         .or_fail()?;
+        // }
 
-        Ok(this)
+        // Ok(this)
     }
 
     pub fn run(mut self) -> orfail::Result<()> {
@@ -89,67 +93,69 @@ impl App {
     }
 
     fn handle_event(&mut self, event: Event) -> orfail::Result<()> {
-        match event {
-            Event::FocusGained => Ok(()),
-            Event::FocusLost => Ok(()),
-            Event::Key(event) => self.handle_key_event(event).or_fail(),
-            Event::Mouse(_) => Ok(()),
-            Event::Paste(_) => Ok(()),
-            Event::Resize(_, _) => self.render().or_fail(),
-        }
+        // match event {
+        //     Event::FocusGained => Ok(()),
+        //     Event::FocusLost => Ok(()),
+        //     Event::Key(event) => self.handle_key_event(event).or_fail(),
+        //     Event::Mouse(_) => Ok(()),
+        //     Event::Paste(_) => Ok(()),
+        //     Event::Resize(_, _) => self.render().or_fail(),
+        // }
+        todo!()
     }
 
     fn handle_key_event(&mut self, event: KeyEvent) -> orfail::Result<()> {
-        if event.kind != KeyEventKind::Press {
-            return Ok(());
-        }
+        todo!()
+        // if event.kind != KeyEventKind::Press {
+        //     return Ok(());
+        // }
 
-        let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
-        let editing = !matches!(self.state.focus, Focus::SearchResult);
-        match event.code {
-            KeyCode::Char('q') if !editing => {
-                self.exit = true;
-            }
-            KeyCode::Esc => {
-                self.exit = true;
-            }
-            KeyCode::Char('c') if ctrl => {
-                self.exit = true;
-            }
-            KeyCode::Char('H') if !editing => {
-                self.legend.hide = !self.legend.hide;
-                self.state.dirty = true;
-            }
-            _ => {
-                let old_focus = self.state.focus;
-                if editing {
-                    self.command_editor
-                        .handle_key_event(&mut self.state, event)
-                        .or_fail()?;
-                } else {
-                    self.search_result
-                        .handle_key_event(&mut self.state, event)
-                        .or_fail()?;
-                }
+        // let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
+        // let editing = !matches!(self.state.focus, Focus::SearchResult);
+        // match event.code {
+        //     KeyCode::Char('q') if !editing => {
+        //         self.exit = true;
+        //     }
+        //     KeyCode::Esc => {
+        //         self.exit = true;
+        //     }
+        //     KeyCode::Char('c') if ctrl => {
+        //         self.exit = true;
+        //     }
+        //     KeyCode::Char('H') if !editing => {
+        //         self.legend.hide = !self.legend.hide;
+        //         self.state.dirty = true;
+        //     }
+        //     _ => {
+        //         let old_focus = self.state.focus;
+        //         if editing {
+        //             self.command_editor
+        //                 .handle_key_event(&mut self.state, event)
+        //                 .or_fail()?;
+        //         } else {
+        //             self.search_result
+        //                 .handle_key_event(&mut self.state, event)
+        //                 .or_fail()?;
+        //         }
 
-                if old_focus != self.state.focus {
-                    self.command_editor.handle_focus_change(&mut self.state);
-                }
-            }
-        }
+        //         if old_focus != self.state.focus {
+        //             self.command_editor.handle_focus_change(&mut self.state);
+        //         }
+        //     }
+        // }
 
-        if self.state.dirty {
-            self.render().or_fail()?;
-            self.command_editor.update_cursor_position(&mut self.state);
+        // if self.state.dirty {
+        //     self.render().or_fail()?;
+        //     self.command_editor.update_cursor_position(&mut self.state);
 
-            if let Some(position) = self.state.show_terminal_cursor {
-                self.terminal.show_cursor(position).or_fail()?;
-            } else {
-                self.terminal.hide_cursor().or_fail()?;
-            }
-        }
+        //     if let Some(position) = self.state.show_terminal_cursor {
+        //         self.terminal.show_cursor(position).or_fail()?;
+        //     } else {
+        //         self.terminal.hide_cursor().or_fail()?;
+        //     }
+        // }
 
-        Ok(())
+        // Ok(())
     }
 }
 
