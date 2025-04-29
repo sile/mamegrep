@@ -144,15 +144,9 @@ impl Frame {
             TerminalFrame::with_char_width_estimator(self.size, UnicodeCharWidthEstimator);
         for line in self.into_lines() {
             for token in line.tokens {
-                let _ = write!(
-                    frame,
-                    "{}{}{}",
-                    token.style,
-                    token.text,
-                    TerminalStyle::RESET
-                );
+                let _ = write!(frame, "{}{}", token.style, token.text);
             }
-            let _ = writeln!(frame);
+            let _ = writeln!(frame, "{}", TerminalStyle::RESET);
         }
         frame
     }
