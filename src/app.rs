@@ -6,16 +6,15 @@ use std::{
 };
 
 use crate::{
-    canvas::{Canvas, TokenPosition},
+    canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
-    terminal::Terminal,
     widget_command_editor::CommandEditorWidget,
     widget_legend::LegendWidget,
     widget_search_result::{Cursor, SearchResultWidget},
 };
 
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use orfail::OrFail;
+use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
 
 #[derive(Debug)]
 pub struct App {
@@ -42,8 +41,12 @@ impl App {
         if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
         } else {
-            this.handle_key_event(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::empty()))
-                .or_fail()?;
+            this.handle_key_input(KeyInput {
+                alt: false,
+                ctrl: false,
+                code: KeyCode::Char('/'),
+            })
+            .or_fail()?;
         }
 
         Ok(this)
@@ -53,7 +56,9 @@ impl App {
         self.render().or_fail()?;
 
         while !self.exit {
-            let event = self.terminal.next_event().or_fail()?;
+            let Some(event) = self.terminal.poll_event(None).or_fail()? else {
+                continue;
+            };
             self.handle_event(event).or_fail()?;
         }
 
@@ -82,38 +87,36 @@ impl App {
         self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
 
-        self.terminal.draw_frame(canvas.into_frame()).or_fail()?;
+        self.command_editor.update_cursor_position(&mut self.state);
+        self.terminal.set_cursor(self.state.show_terminal_cursor);
+
+        self.terminal
+            .draw(canvas.into_frame().into_terminal_frame())
+            .or_fail()?;
 
         self.state.dirty = false;
         Ok(())
     }
 
-    fn handle_event(&mut self, event: Event) -> orfail::Result<()> {
+    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
         match event {
-            Event::FocusGained => Ok(()),
-            Event::FocusLost => Ok(()),
-            Event::Key(event) => self.handle_key_event(event).or_fail(),
-            Event::Mouse(_) => Ok(()),
-            Event::Paste(_) => Ok(()),
-            Event::Resize(_, _) => self.render().or_fail(),
+            TerminalEvent::Resize(_) => self.render().or_fail(),
+            TerminalEvent::Input(TerminalInput::Key(input)) => {
+                self.handle_key_input(input).or_fail()
+            }
         }
     }
 
-    fn handle_key_event(&mut self, event: KeyEvent) -> orfail::Result<()> {
-        if event.kind != KeyEventKind::Press {
-            return Ok(());
-        }
-
-        let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
+    fn handle_key_input(&mut self, input: KeyInput) -> orfail::Result<()> {
         let editing = !matches!(self.state.focus, Focus::SearchResult);
-        match event.code {
+        match input.code {
             KeyCode::Char('q') if !editing => {
                 self.exit = true;
             }
-            KeyCode::Esc => {
+            KeyCode::Escape => {
                 self.exit = true;
             }
-            KeyCode::Char('c') if ctrl => {
+            KeyCode::Char('c') if input.ctrl => {
                 self.exit = true;
             }
             KeyCode::Char('H') if !editing => {
@@ -124,11 +127,11 @@ impl App {
                 let old_focus = self.state.focus;
                 if editing {
                     self.command_editor
-                        .handle_key_event(&mut self.state, event)
+                        .handle_key_input(&mut self.state, input)
                         .or_fail()?;
                 } else {
                     self.search_result
-                        .handle_key_event(&mut self.state, event)
+                        .handle_key_input(&mut self.state, input)
                         .or_fail()?;
                 }
 
@@ -140,13 +143,6 @@ impl App {
 
         if self.state.dirty {
             self.render().or_fail()?;
-            self.command_editor.update_cursor_position(&mut self.state);
-
-            if let Some(position) = self.state.show_terminal_cursor {
-                self.terminal.show_cursor(position).or_fail()?;
-            } else {
-                self.terminal.hide_cursor().or_fail()?;
-            }
         }
 
         Ok(())
@@ -177,7 +173,7 @@ pub struct AppState {
     pub search_result: SearchResult,
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
-    pub show_terminal_cursor: Option<TokenPosition>,
+    pub show_terminal_cursor: Option<TerminalPosition>,
     pub focus: Focus,
 }
 

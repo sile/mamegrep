@@ -1,10 +1,10 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use orfail::OrFail;
+use tuinix::{KeyCode, KeyInput, TerminalPosition, TerminalStyle};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
-    canvas::{Canvas, Token, TokenPosition, TokenStyle},
+    canvas::{Canvas, Token},
     git::GrepArg,
 };
 
@@ -32,13 +32,12 @@ impl CommandEditorWidget {
         state.dirty = true;
     }
 
-    pub fn handle_key_event(
+    pub fn handle_key_input(
         &mut self,
         state: &mut AppState,
-        event: KeyEvent,
+        input: KeyInput,
     ) -> orfail::Result<()> {
-        let ctrl = event.modifiers.contains(KeyModifiers::CONTROL);
-        match (ctrl, event.code) {
+        match (input.ctrl, input.code) {
             (_, KeyCode::Enter) => {
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
@@ -111,9 +110,12 @@ impl CommandEditorWidget {
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         if state.focus.is_editing() {
-            canvas.drawln(Token::with_style("[COMMAND]: editing…", TokenStyle::Bold));
+            canvas.drawln(Token::with_style(
+                "[COMMAND]: editing…",
+                TerminalStyle::new().bold(),
+            ));
         } else {
-            canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Plain));
+            canvas.drawln(Token::with_style("[COMMAND]", TerminalStyle::new()));
         }
 
         canvas.draw(Token::new("$ git"));
@@ -130,9 +132,9 @@ impl CommandEditorWidget {
                 canvas.set_cursor_col(Self::COL_OFFSET);
             }
             let style = if focused {
-                TokenStyle::Bold
+                TerminalStyle::new().bold()
             } else {
-                TokenStyle::Plain
+                TerminalStyle::new()
             };
             canvas.draw(Token::with_style(
                 format!(" {}", arg.maybe_quoted_text(state.focus)),
@@ -149,7 +151,7 @@ impl CommandEditorWidget {
         }
 
         let multiline = self.is_multiline(state);
-        let mut pos = TokenPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
+        let mut pos = TerminalPosition::row_col(Self::ROW_OFFSET, Self::COL_OFFSET);
         for arg in state.grep.args(state.focus) {
             let focused = arg.kind.is_focused(state.focus);
             if multiline && arg.multiline_head {

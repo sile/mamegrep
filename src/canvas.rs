@@ -1,13 +1,21 @@
-use std::{collections::VecDeque, num::NonZeroUsize};
+use std::{collections::VecDeque, fmt::Write, num::NonZeroUsize};
 
+use tuinix::{EstimateCharWidth, TerminalFrame, TerminalPosition, TerminalSize, TerminalStyle};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use crate::terminal::TerminalSize;
+#[derive(Debug, Default)]
+pub struct UnicodeCharWidthEstimator;
+
+impl EstimateCharWidth for UnicodeCharWidthEstimator {
+    fn estimate_char_width(&self, c: char) -> usize {
+        c.width().unwrap_or_default()
+    }
+}
 
 #[derive(Debug)]
 pub struct Canvas {
     frame: Frame,
-    cursor: TokenPosition,
+    cursor: TerminalPosition,
     col_offset: usize,
     row_offset: usize,
     auto_scroll: bool,
@@ -17,7 +25,7 @@ impl Canvas {
     pub fn new(frame_size: TerminalSize) -> Self {
         Self {
             frame: Frame::new(frame_size),
-            cursor: TokenPosition::ORIGIN,
+            cursor: TerminalPosition::ZERO,
             col_offset: 0,
             row_offset: 0,
             auto_scroll: false,
@@ -36,11 +44,11 @@ impl Canvas {
         }
     }
 
-    pub fn cursor(&self) -> TokenPosition {
+    pub fn cursor(&self) -> TerminalPosition {
         self.cursor
     }
 
-    pub fn set_cursor(&mut self, position: TokenPosition) {
+    pub fn set_cursor(&mut self, position: TerminalPosition) {
         self.cursor = position;
     }
 
@@ -68,7 +76,7 @@ impl Canvas {
         self.cursor.col = 0;
     }
 
-    pub fn draw_at(&mut self, mut position: TokenPosition, token: Token) {
+    pub fn draw_at(&mut self, mut position: TerminalPosition, token: Token) {
         if position.row < self.row_offset {
             return;
         }
@@ -131,16 +139,16 @@ impl Frame {
         self.lines.into_iter()
     }
 
-    pub fn dirty_lines<'a>(
-        &'a self,
-        prev: &'a Self,
-    ) -> impl 'a + Iterator<Item = (usize, &'a FrameLine)> {
-        self.lines
-            .iter()
-            .zip(prev.lines.iter())
-            .enumerate()
-            .filter_map(|(i, (l0, l1))| (l0 != l1).then_some((i, l0)))
-            .chain(self.lines.iter().enumerate().skip(prev.lines.len()))
+    pub fn into_terminal_frame(self) -> TerminalFrame<UnicodeCharWidthEstimator> {
+        let mut frame =
+            TerminalFrame::with_char_width_estimator(self.size, UnicodeCharWidthEstimator);
+        for line in self.into_lines() {
+            for token in line.tokens {
+                let _ = write!(frame, "{}{}", token.style, token.text);
+            }
+            let _ = writeln!(frame, "{}", TerminalStyle::RESET);
+        }
+        frame
     }
 }
 
@@ -204,35 +212,26 @@ impl FrameLine {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenStyle {
-    Plain,
-    Bold,
-    Dim,
-    Underlined,
-    Reverse,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     text: String,
-    style: TokenStyle,
+    style: TerminalStyle,
 }
 
 impl Token {
     pub fn new(text: impl Into<String>) -> Self {
-        Self::with_style(text, TokenStyle::Plain)
+        Self::with_style(text, TerminalStyle::new())
     }
 
     pub fn text(&self) -> &str {
         &self.text
     }
 
-    pub fn style(&self) -> TokenStyle {
+    pub fn style(&self) -> TerminalStyle {
         self.style
     }
 
-    pub fn with_style(text: impl Into<String>, style: TokenStyle) -> Self {
+    pub fn with_style(text: impl Into<String>, style: TerminalStyle) -> Self {
         let mut text = text.into();
         if text.chars().any(|c| c.is_control()) {
             let mut escaped_text = String::new();
@@ -278,68 +277,9 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TokenPosition {
-    pub row: usize,
-    pub col: usize,
-}
-
-impl TokenPosition {
-    pub const ORIGIN: Self = Self { row: 0, col: 0 };
-
-    pub fn row(row: usize) -> Self {
-        Self::row_col(row, 0)
-    }
-
-    pub const fn row_col(row: usize, col: usize) -> Self {
-        Self { row, col }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn canvas() -> orfail::Result<()> {
-        let size = TerminalSize { rows: 2, cols: 4 };
-
-        // No dirty lines.
-        let frame0 = Canvas::new(size).into_frame();
-        let frame1 = Canvas::new(size).into_frame();
-        assert_eq!(frame1.dirty_lines(&frame0).count(), 0);
-
-        // Draw lines.
-        let mut canvas = Canvas::new(size);
-        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
-        canvas.draw_at(TokenPosition::row_col(1, 2), Token::new("world"));
-
-        let frame2 = canvas.into_frame();
-        assert_eq!(frame2.dirty_lines(&frame1).count(), 2);
-        assert_eq!(
-            frame2
-                .dirty_lines(&frame1)
-                .map(|(_, l)| l.text())
-                .collect::<Vec<_>>(),
-            ["hell", "  wo"],
-        );
-
-        // Draw another lines.
-        let mut canvas = Canvas::new(size);
-        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
-
-        let frame3 = canvas.into_frame();
-        assert_eq!(frame3.dirty_lines(&frame2).count(), 1);
-        assert_eq!(
-            frame3
-                .dirty_lines(&frame2)
-                .map(|(_, l)| l.text())
-                .collect::<Vec<_>>(),
-            [""],
-        );
-
-        Ok(())
-    }
 
     #[test]
     fn frame_line() -> orfail::Result<()> {
