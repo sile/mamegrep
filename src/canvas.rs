@@ -1,7 +1,16 @@
 use std::{collections::VecDeque, fmt::Write, num::NonZeroUsize};
 
-use tuinix::{TerminalFrame, TerminalPosition, TerminalSize, TerminalStyle};
+use tuinix::{MeasureCharWidth, TerminalFrame, TerminalPosition, TerminalSize, TerminalStyle};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+
+#[derive(Debug, Default)]
+pub struct UnicodeCharWidthEstimator;
+
+impl MeasureCharWidth for UnicodeCharWidthEstimator {
+    fn measure_char_width(&self, c: char) -> usize {
+        c.width().unwrap_or_default()
+    }
+}
 
 #[derive(Debug)]
 pub struct Canvas {
@@ -130,7 +139,7 @@ impl Frame {
         self.lines.into_iter()
     }
 
-    pub fn into_terminal_frame(self) -> TerminalFrame {
+    pub fn into_terminal_frame(self) -> TerminalFrame<UnicodeCharWidthEstimator> {
         let mut frame = TerminalFrame::new(self.size);
         for line in self.into_lines() {
             for token in line.tokens {
