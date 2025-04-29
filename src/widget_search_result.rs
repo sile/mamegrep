@@ -1,10 +1,11 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
-use tuinix::KeyInput;
+use orfail::OrFail;
+use tuinix::{KeyCode, KeyInput};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    app::AppState,
+    app::{AppState, Focus},
     canvas::{Canvas, Token, TokenStyle},
     git::{ContextLines, Line},
 };
@@ -220,61 +221,61 @@ impl SearchResultWidget {
         state: &mut AppState,
         input: KeyInput,
     ) -> orfail::Result<()> {
-        // if event.modifiers.contains(KeyModifiers::CONTROL) {
-        //     match event.code {
-        //         KeyCode::Char('p') => state.cursor_up(),
-        //         KeyCode::Char('n') => state.cursor_down(),
-        //         KeyCode::Char('f') => state.cursor_right(),
-        //         KeyCode::Char('b') => state.cursor_left(),
-        //         _ => {}
-        //     }
-        //     return Ok(());
-        // }
+        if input.ctrl {
+            match input.code {
+                KeyCode::Char('p') => state.cursor_up(),
+                KeyCode::Char('n') => state.cursor_down(),
+                KeyCode::Char('f') => state.cursor_right(),
+                KeyCode::Char('b') => state.cursor_left(),
+                _ => {}
+            }
+            return Ok(());
+        }
 
-        // match event.code {
-        //     KeyCode::Char('/' | 'e') => state.set_focus(Focus::Pattern),
-        //     KeyCode::Char('a') => state.set_focus(Focus::AndPattern),
-        //     KeyCode::Char('n') => state.set_focus(Focus::NotPattern),
-        //     KeyCode::Char('r') => state.set_focus(Focus::Revision),
-        //     KeyCode::Char('p') => state.set_focus(Focus::Path),
-        //     KeyCode::Char('i') => state.flip_grep_flag(|f| &mut f.ignore_case).or_fail()?,
-        //     KeyCode::Char('u') => state.flip_grep_flag(|f| &mut f.untracked).or_fail()?,
-        //     KeyCode::Char('I') => state.flip_grep_flag(|f| &mut f.no_index).or_fail()?,
-        //     KeyCode::Char('R') => state.flip_grep_flag(|f| &mut f.no_recursive).or_fail()?,
-        //     KeyCode::Char('w') => state.flip_grep_flag(|f| &mut f.word_regexp).or_fail()?,
-        //     KeyCode::Char('F') if !(state.grep.perl_regexp || state.grep.extended_regexp) => {
-        //         state.flip_grep_flag(|f| &mut f.fixed_strings).or_fail()?;
-        //     }
-        //     KeyCode::Char('E') if !(state.grep.fixed_strings || state.grep.perl_regexp) => {
-        //         state.flip_grep_flag(|f| &mut f.extended_regexp).or_fail()?;
-        //     }
-        //     KeyCode::Char('P') if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
-        //         state.flip_grep_flag(|f| &mut f.perl_regexp).or_fail()?;
-        //     }
-        //     KeyCode::Char('+')
-        //         if state.cursor.is_line_level() && state.grep.context_lines < ContextLines::MAX =>
-        //     {
-        //         state.grep.context_lines.0 += 1;
-        //         state.regrep().or_fail()?;
-        //     }
-        //     KeyCode::Char('-')
-        //         if state.cursor.is_line_level() && state.grep.context_lines > ContextLines::MIN =>
-        //     {
-        //         state.grep.context_lines.0 -= 1;
-        //         state.regrep().or_fail()?;
-        //     }
-        //     KeyCode::Up | KeyCode::Char('k') => state.cursor_up(),
-        //     KeyCode::Down | KeyCode::Char('j') => state.cursor_down(),
-        //     KeyCode::Right | KeyCode::Char('l') => state.cursor_right(),
-        //     KeyCode::Left | KeyCode::Char('h') => state.cursor_left(),
-        //     KeyCode::Char('t') | KeyCode::Tab => {
-        //         state.toggle_expansion();
-        //     }
-        //     KeyCode::Char('T') => {
-        //         state.toggle_all_expansion();
-        //     }
-        //     _ => {}
-        // }
+        match input.code {
+            KeyCode::Char('/' | 'e') => state.set_focus(Focus::Pattern),
+            KeyCode::Char('a') => state.set_focus(Focus::AndPattern),
+            KeyCode::Char('n') => state.set_focus(Focus::NotPattern),
+            KeyCode::Char('r') => state.set_focus(Focus::Revision),
+            KeyCode::Char('p') => state.set_focus(Focus::Path),
+            KeyCode::Char('i') => state.flip_grep_flag(|f| &mut f.ignore_case).or_fail()?,
+            KeyCode::Char('u') => state.flip_grep_flag(|f| &mut f.untracked).or_fail()?,
+            KeyCode::Char('I') => state.flip_grep_flag(|f| &mut f.no_index).or_fail()?,
+            KeyCode::Char('R') => state.flip_grep_flag(|f| &mut f.no_recursive).or_fail()?,
+            KeyCode::Char('w') => state.flip_grep_flag(|f| &mut f.word_regexp).or_fail()?,
+            KeyCode::Char('F') if !(state.grep.perl_regexp || state.grep.extended_regexp) => {
+                state.flip_grep_flag(|f| &mut f.fixed_strings).or_fail()?;
+            }
+            KeyCode::Char('E') if !(state.grep.fixed_strings || state.grep.perl_regexp) => {
+                state.flip_grep_flag(|f| &mut f.extended_regexp).or_fail()?;
+            }
+            KeyCode::Char('P') if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
+                state.flip_grep_flag(|f| &mut f.perl_regexp).or_fail()?;
+            }
+            KeyCode::Char('+')
+                if state.cursor.is_line_level() && state.grep.context_lines < ContextLines::MAX =>
+            {
+                state.grep.context_lines.0 += 1;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Char('-')
+                if state.cursor.is_line_level() && state.grep.context_lines > ContextLines::MIN =>
+            {
+                state.grep.context_lines.0 -= 1;
+                state.regrep().or_fail()?;
+            }
+            KeyCode::Up | KeyCode::Char('k') => state.cursor_up(),
+            KeyCode::Down | KeyCode::Char('j') => state.cursor_down(),
+            KeyCode::Right | KeyCode::Char('l') => state.cursor_right(),
+            KeyCode::Left | KeyCode::Char('h') => state.cursor_left(),
+            KeyCode::Char('t') | KeyCode::Tab => {
+                state.toggle_expansion();
+            }
+            KeyCode::Char('T') => {
+                state.toggle_all_expansion();
+            }
+            _ => {}
+        }
         Ok(())
     }
 }
