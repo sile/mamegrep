@@ -87,6 +87,9 @@ impl App {
         self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
 
+        self.command_editor.update_cursor_position(&mut self.state);
+        self.terminal.set_cursor(self.state.show_terminal_cursor);
+
         self.terminal
             .draw(canvas.into_frame().into_terminal_frame())
             .or_fail()?;
@@ -140,8 +143,6 @@ impl App {
 
         if self.state.dirty {
             self.render().or_fail()?;
-            self.command_editor.update_cursor_position(&mut self.state);
-            self.terminal.set_cursor(self.state.show_terminal_cursor);
         }
 
         Ok(())
