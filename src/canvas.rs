@@ -1,6 +1,6 @@
-use std::{collections::VecDeque, num::NonZeroUsize};
+use std::{collections::VecDeque, fmt::Write, num::NonZeroUsize};
 
-use tuinix::{TerminalFrame, TerminalPosition, TerminalSize};
+use tuinix::{TerminalFrame, TerminalPosition, TerminalSize, TerminalStyle};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 #[derive(Debug)]
@@ -131,7 +131,22 @@ impl Frame {
     }
 
     pub fn into_terminal_frame(self) -> TerminalFrame {
-        todo!()
+        let mut frame = TerminalFrame::new(self.size);
+        for line in self.into_lines() {
+            for token in line.tokens {
+                let style = TerminalStyle::new();
+                let style = match token.style {
+                    TokenStyle::Plain => style,
+                    TokenStyle::Bold => style.bold(),
+                    TokenStyle::Dim => style.dim(),
+                    TokenStyle::Underlined => style.underline(),
+                    TokenStyle::Reverse => style.reverse(),
+                };
+                let _ = write!(frame, "{}{}{}", style, token.text, TerminalStyle::RESET);
+            }
+            let _ = writeln!(frame);
+        }
+        frame
     }
 }
 
