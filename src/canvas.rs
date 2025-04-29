@@ -1,12 +1,12 @@
 use std::{collections::VecDeque, num::NonZeroUsize};
 
-use tuinix::{TerminalFrame, TerminalSize};
+use tuinix::{TerminalFrame, TerminalPosition, TerminalSize};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 #[derive(Debug)]
 pub struct Canvas {
     frame: Frame,
-    cursor: TokenPosition,
+    cursor: TerminalPosition,
     col_offset: usize,
     row_offset: usize,
     auto_scroll: bool,
@@ -16,7 +16,7 @@ impl Canvas {
     pub fn new(frame_size: TerminalSize) -> Self {
         Self {
             frame: Frame::new(frame_size),
-            cursor: TokenPosition::ORIGIN,
+            cursor: TerminalPosition::ZERO,
             col_offset: 0,
             row_offset: 0,
             auto_scroll: false,
@@ -35,11 +35,11 @@ impl Canvas {
         }
     }
 
-    pub fn cursor(&self) -> TokenPosition {
+    pub fn cursor(&self) -> TerminalPosition {
         self.cursor
     }
 
-    pub fn set_cursor(&mut self, position: TokenPosition) {
+    pub fn set_cursor(&mut self, position: TerminalPosition) {
         self.cursor = position;
     }
 
@@ -67,7 +67,7 @@ impl Canvas {
         self.cursor.col = 0;
     }
 
-    pub fn draw_at(&mut self, mut position: TokenPosition, token: Token) {
+    pub fn draw_at(&mut self, mut position: TerminalPosition, token: Token) {
         if position.row < self.row_offset {
             return;
         }
@@ -95,8 +95,8 @@ impl Canvas {
         }
     }
 
-    pub fn into_frame(self) -> TerminalFrame {
-        todo!()
+    pub fn into_frame(self) -> Frame {
+        self.frame
     }
 
     pub fn set_auto_scroll(&mut self, auto: bool) {
@@ -130,16 +130,8 @@ impl Frame {
         self.lines.into_iter()
     }
 
-    pub fn dirty_lines<'a>(
-        &'a self,
-        prev: &'a Self,
-    ) -> impl 'a + Iterator<Item = (usize, &'a FrameLine)> {
-        self.lines
-            .iter()
-            .zip(prev.lines.iter())
-            .enumerate()
-            .filter_map(|(i, (l0, l1))| (l0 != l1).then_some((i, l0)))
-            .chain(self.lines.iter().enumerate().skip(prev.lines.len()))
+    pub fn into_terminal_frame(self) -> TerminalFrame {
+        todo!()
     }
 }
 
@@ -277,24 +269,6 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TokenPosition {
-    pub row: usize,
-    pub col: usize,
-}
-
-impl TokenPosition {
-    pub const ORIGIN: Self = Self { row: 0, col: 0 };
-
-    pub fn row(row: usize) -> Self {
-        Self::row_col(row, 0)
-    }
-
-    pub const fn row_col(row: usize, col: usize) -> Self {
-        Self { row, col }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -310,8 +284,8 @@ mod tests {
 
         // Draw lines.
         let mut canvas = Canvas::new(size);
-        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
-        canvas.draw_at(TokenPosition::row_col(1, 2), Token::new("world"));
+        canvas.draw_at(TerminalPosition::row(0), Terminal::new("hello"));
+        canvas.draw_at(TerminalPosition::row_col(1, 2), Terminal::new("world"));
 
         let frame2 = canvas.into_frame();
         assert_eq!(frame2.dirty_lines(&frame1).count(), 2);
@@ -325,7 +299,7 @@ mod tests {
 
         // Draw another lines.
         let mut canvas = Canvas::new(size);
-        canvas.draw_at(TokenPosition::row(0), Token::new("hello"));
+        canvas.draw_at(TerminalPosition::row(0), Terminal::new("hello"));
 
         let frame3 = canvas.into_frame();
         assert_eq!(frame3.dirty_lines(&frame2).count(), 1);

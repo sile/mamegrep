@@ -28,10 +28,9 @@ impl SearchResultWidget {
         tmp_canvas.set_auto_scroll(true);
         self.render_files(state, &mut tmp_canvas);
 
-        // TODO
-        // for line in tmp_canvas.into_frame().into_lines() {
-        //     canvas.draw_frame_line(line);
-        // }
+        for line in tmp_canvas.into_frame().into_lines() {
+            canvas.draw_frame_line(line);
+        }
     }
 
     fn render_error(&self, state: &AppState, canvas: &mut Canvas, error: &str) {

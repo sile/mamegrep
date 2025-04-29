@@ -1,8 +1,8 @@
-use tuinix::TerminalSize;
+use tuinix::{TerminalPosition, TerminalSize};
 
 use crate::{
     app::AppState,
-    canvas::{Canvas, Token, TokenPosition, TokenStyle},
+    canvas::{Canvas, Token, TokenStyle},
 };
 
 #[derive(Debug, Default)]
@@ -27,7 +27,7 @@ impl LegendWidget {
             return;
         }
 
-        canvas.set_cursor(TokenPosition::row(0));
+        canvas.set_cursor(TerminalPosition::row(0));
 
         let editing = state.focus.is_editing();
         if self.hide {

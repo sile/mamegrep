@@ -87,7 +87,9 @@ impl App {
         self.search_result.render(&self.state, &mut canvas);
         self.legend.render(&self.state, &mut canvas);
 
-        self.terminal.draw(canvas.into_frame()).or_fail()?;
+        self.terminal
+            .draw(canvas.into_frame().into_terminal_frame())
+            .or_fail()?;
 
         self.state.dirty = false;
         Ok(())
