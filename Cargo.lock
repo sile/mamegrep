@@ -32,9 +32,9 @@ checksum = "aba2212a0fddd290c8209fb9b0393382435ede29c24a71f245d7fa92f0f3442e"
 
 [[package]]
 name = "tuinix"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab5d251e3d9dc53b0edaf3c002c8920bee0ebb969e979aaf0304eb047381de56"
+checksum = "b63b27898a12ecd41d87b1eaa3c7efec9b7b67482d33cc348cbeafa600a15d78"
 dependencies = [
  "libc",
 ]
