@@ -1,8 +1,8 @@
-use tuinix::{TerminalPosition, TerminalSize};
+use tuinix::{TerminalPosition, TerminalSize, TerminalStyle};
 
 use crate::{
     app::AppState,
-    canvas::{Canvas, Token, TokenStyle},
+    canvas::{Canvas, Token},
 };
 
 #[derive(Debug, Default)]
@@ -52,7 +52,10 @@ impl LegendWidget {
         canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
         canvas.draw(Token::new("│"));
-        canvas.drawln(Token::with_style("[ACTIONS]            ", TokenStyle::Bold));
+        canvas.drawln(Token::with_style(
+            "[ACTIONS]            ",
+            TerminalStyle::new().bold(),
+        ));
         canvas.drawln(Token::new("│ quit       [ESC,C-c]"));
         canvas.drawln(Token::new("│                     "));
         canvas.drawln(Token::new("│ search       [ENTER]"));
@@ -75,7 +78,10 @@ impl LegendWidget {
         canvas.set_col_offset(canvas.frame_size().cols - Self::COLS);
 
         canvas.draw(Token::new("│"));
-        canvas.drawln(Token::with_style("[ACTIONS]            ", TokenStyle::Bold));
+        canvas.drawln(Token::with_style(
+            "[ACTIONS]            ",
+            TerminalStyle::new().bold(),
+        ));
         canvas.drawln(Token::new("│ (q)uit     [ESC,C-c]"));
         canvas.drawln(Token::new("│                     "));
         canvas.drawln(Token::new("│ (e)dit pattern   [/]"));
@@ -115,7 +121,10 @@ impl LegendWidget {
         }
 
         canvas.draw(Token::new("│"));
-        canvas.drawln(Token::with_style("[GIT GREP FLAGS]     ", TokenStyle::Bold));
+        canvas.drawln(Token::with_style(
+            "[GIT GREP FLAGS]     ",
+            TerminalStyle::new().bold(),
+        ));
 
         if state.grep.ignore_case {
             canvas.drawln(Token::new("│o --(i)gnore-case    "));

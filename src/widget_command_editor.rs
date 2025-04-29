@@ -1,10 +1,10 @@
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, TerminalPosition};
+use tuinix::{KeyCode, KeyInput, TerminalPosition, TerminalStyle};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
-    canvas::{Canvas, Token, TokenStyle},
+    canvas::{Canvas, Token},
     git::GrepArg,
 };
 
@@ -110,9 +110,12 @@ impl CommandEditorWidget {
 
     pub fn render(&self, state: &AppState, canvas: &mut Canvas) {
         if state.focus.is_editing() {
-            canvas.drawln(Token::with_style("[COMMAND]: editing…", TokenStyle::Bold));
+            canvas.drawln(Token::with_style(
+                "[COMMAND]: editing…",
+                TerminalStyle::new().bold(),
+            ));
         } else {
-            canvas.drawln(Token::with_style("[COMMAND]", TokenStyle::Plain));
+            canvas.drawln(Token::with_style("[COMMAND]", TerminalStyle::new()));
         }
 
         canvas.draw(Token::new("$ git"));
@@ -129,9 +132,9 @@ impl CommandEditorWidget {
                 canvas.set_cursor_col(Self::COL_OFFSET);
             }
             let style = if focused {
-                TokenStyle::Bold
+                TerminalStyle::new().bold()
             } else {
-                TokenStyle::Plain
+                TerminalStyle::new()
             };
             canvas.draw(Token::with_style(
                 format!(" {}", arg.maybe_quoted_text(state.focus)),

@@ -1,12 +1,12 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput};
+use tuinix::{KeyCode, KeyInput, TerminalStyle};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
-    canvas::{Canvas, Token, TokenStyle},
+    canvas::{Canvas, Token},
     git::{ContextLines, Line},
 };
 
@@ -35,9 +35,9 @@ impl SearchResultWidget {
 
     fn render_error(&self, state: &AppState, canvas: &mut Canvas, error: &str) {
         let style = if state.focus.is_editing() {
-            TokenStyle::Plain
+            TerminalStyle::new()
         } else {
-            TokenStyle::Bold
+            TerminalStyle::new().bold()
         };
 
         canvas.drawln(Token::with_style("[RESULT]: error", style));
@@ -46,9 +46,9 @@ impl SearchResultWidget {
 
     fn render_header_line(&self, state: &AppState, canvas: &mut Canvas) {
         let style = if state.focus.is_editing() {
-            TokenStyle::Plain
+            TerminalStyle::new()
         } else {
-            TokenStyle::Bold
+            TerminalStyle::new().bold()
         };
 
         canvas.drawln(Token::with_style(
@@ -74,7 +74,7 @@ impl SearchResultWidget {
             canvas.draw(Token::new(format!("{}# ", file_index + 1)));
             canvas.draw(Token::with_style(
                 format!("{}", file.display()),
-                TokenStyle::Underlined,
+                TerminalStyle::new().underline(),
             ));
             canvas.draw(Token::new(format!(
                 " ({} hits, {} lines)",
@@ -155,7 +155,7 @@ impl SearchResultWidget {
 
             col_offset += line_text[..i].width();
             canvas.set_cursor_col(col_offset);
-            canvas.draw(Token::with_style(hit_text, TokenStyle::Reverse));
+            canvas.draw(Token::with_style(hit_text, TerminalStyle::new().reverse()));
 
             col_offset += hit_text.width();
             line_text = &line_text[i + hit_text.len()..];

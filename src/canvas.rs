@@ -134,15 +134,13 @@ impl Frame {
         let mut frame = TerminalFrame::new(self.size);
         for line in self.into_lines() {
             for token in line.tokens {
-                let style = TerminalStyle::new();
-                let style = match token.style {
-                    TokenStyle::Plain => style,
-                    TokenStyle::Bold => style.bold(),
-                    TokenStyle::Dim => style.dim(),
-                    TokenStyle::Underlined => style.underline(),
-                    TokenStyle::Reverse => style.reverse(),
-                };
-                let _ = write!(frame, "{}{}{}", style, token.text, TerminalStyle::RESET);
+                let _ = write!(
+                    frame,
+                    "{}{}{}",
+                    token.style,
+                    token.text,
+                    TerminalStyle::RESET
+                );
             }
             let _ = writeln!(frame);
         }
@@ -210,35 +208,26 @@ impl FrameLine {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenStyle {
-    Plain,
-    Bold,
-    Dim,
-    Underlined,
-    Reverse,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     text: String,
-    style: TokenStyle,
+    style: TerminalStyle,
 }
 
 impl Token {
     pub fn new(text: impl Into<String>) -> Self {
-        Self::with_style(text, TokenStyle::Plain)
+        Self::with_style(text, TerminalStyle::new())
     }
 
     pub fn text(&self) -> &str {
         &self.text
     }
 
-    pub fn style(&self) -> TokenStyle {
+    pub fn style(&self) -> TerminalStyle {
         self.style
     }
 
-    pub fn with_style(text: impl Into<String>, style: TokenStyle) -> Self {
+    pub fn with_style(text: impl Into<String>, style: TerminalStyle) -> Self {
         let mut text = text.into();
         if text.chars().any(|c| c.is_control()) {
             let mut escaped_text = String::new();
