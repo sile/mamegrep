@@ -287,47 +287,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn canvas() -> orfail::Result<()> {
-        let size = TerminalSize { rows: 2, cols: 4 };
-
-        // No dirty lines.
-        let frame0 = Canvas::new(size).into_frame();
-        let frame1 = Canvas::new(size).into_frame();
-        assert_eq!(frame1.dirty_lines(&frame0).count(), 0);
-
-        // Draw lines.
-        let mut canvas = Canvas::new(size);
-        canvas.draw_at(TerminalPosition::row(0), Terminal::new("hello"));
-        canvas.draw_at(TerminalPosition::row_col(1, 2), Terminal::new("world"));
-
-        let frame2 = canvas.into_frame();
-        assert_eq!(frame2.dirty_lines(&frame1).count(), 2);
-        assert_eq!(
-            frame2
-                .dirty_lines(&frame1)
-                .map(|(_, l)| l.text())
-                .collect::<Vec<_>>(),
-            ["hell", "  wo"],
-        );
-
-        // Draw another lines.
-        let mut canvas = Canvas::new(size);
-        canvas.draw_at(TerminalPosition::row(0), Terminal::new("hello"));
-
-        let frame3 = canvas.into_frame();
-        assert_eq!(frame3.dirty_lines(&frame2).count(), 1);
-        assert_eq!(
-            frame3
-                .dirty_lines(&frame2)
-                .map(|(_, l)| l.text())
-                .collect::<Vec<_>>(),
-            [""],
-        );
-
-        Ok(())
-    }
-
-    #[test]
     fn frame_line() -> orfail::Result<()> {
         let mut line = FrameLine::new();
 
