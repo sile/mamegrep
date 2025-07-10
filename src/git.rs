@@ -485,7 +485,7 @@ mod tests {
 315:        line.draw_token(2, Token::new("foo"));
 316:        assert_eq!(line.text(), "  foo");
 "#;
-        let result = SearchResult::parse(&output, Highlight::default()).or_fail()?;
+        let result = SearchResult::parse(output, Highlight::default()).or_fail()?;
         assert_eq!(result.files.len(), 1);
 
         let lines = result
@@ -519,7 +519,7 @@ src/git.rs
 152:40:foo
 166:55:foo
 172:51:foo"#;
-        let highlight = Highlight::parse(&output).or_fail()?;
+        let highlight = Highlight::parse(output).or_fail()?;
         assert_eq!(highlight.lines.len(), 2);
 
         Ok(())
