@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "libc"
-version = "0.2.172"
+version = "0.2.174"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
+checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
 name = "mamegrep"
@@ -32,15 +32,15 @@ checksum = "aba2212a0fddd290c8209fb9b0393382435ede29c24a71f245d7fa92f0f3442e"
 
 [[package]]
 name = "tuinix"
-version = "0.1.2"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d600d318b35204079473a843d3c7703962dfbec0e2dcf27f2676aaea610f5060"
+checksum = "5622f8e2e397f0eeddee17e0443f2355a5858f2e8faa86a0d915a0b4a1960dc7"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "unicode-width"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
+checksum = "4a1a07cc7db3810833284e8d372ccdc6da29741639ecc70c9ec107df0fa6154c"
