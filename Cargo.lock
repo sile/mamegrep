@@ -20,9 +20,9 @@ dependencies = [
 
 [[package]]
 name = "noargs"
-version = "0.3.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a0c67c67bde59ae289ec6d68089f3e399b9cb7a2941875d1e94a1123c401308"
+checksum = "fe77e710319d3ff009f93efc433d879e80e6336f5b87ace6d6db7ca5951085c3"
 
 [[package]]
 name = "orfail"
@@ -32,9 +32,9 @@ checksum = "aba2212a0fddd290c8209fb9b0393382435ede29c24a71f245d7fa92f0f3442e"
 
 [[package]]
 name = "tuinix"
-version = "0.1.5"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5622f8e2e397f0eeddee17e0443f2355a5858f2e8faa86a0d915a0b4a1960dc7"
+checksum = "67068facab6ee2aff2c66c3249d064c996435cf8f1a8e61db8675571ca4c01ff"
 dependencies = [
  "libc",
 ]
