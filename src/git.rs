@@ -219,7 +219,7 @@ impl GrepArg {
         self.text.len()
     }
 
-    pub fn maybe_quoted_text(&self, focus: Focus) -> Cow<str> {
+    pub fn maybe_quoted_text(&self, focus: Focus) -> Cow<'_, str> {
         if self.kind.is_focused(focus) || self.kind == GrepArgKind::Other {
             Cow::Borrowed(&self.text)
         } else {
@@ -231,7 +231,7 @@ impl GrepArg {
         self.maybe_quoted_text(focus).width()
     }
 
-    pub fn quoted_text(&self) -> Cow<str> {
+    pub fn quoted_text(&self) -> Cow<'_, str> {
         if self.text.is_empty() {
             return Cow::Borrowed("''");
         } else if !self.text.contains([
