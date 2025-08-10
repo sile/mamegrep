@@ -104,12 +104,8 @@ impl App {
             TerminalEvent::Input(TerminalInput::Key(input)) => {
                 self.handle_key_input(input).or_fail()
             }
-            TerminalEvent::Input(TerminalInput::Mouse(_)) => {
-                unreachable!()
-            }
-            TerminalEvent::FdReady { .. } => {
-                unreachable!()
-            }
+            TerminalEvent::Input(TerminalInput::Mouse(_)) => Err(orfail::Failure::new("bug")),
+            TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
         }
     }
 
