@@ -1,7 +1,6 @@
 use std::{borrow::Cow, collections::BTreeMap, num::NonZeroUsize, path::PathBuf, process::Command};
 
 use orfail::OrFail;
-use unicode_width::UnicodeWidthStr;
 
 use crate::app::Focus;
 
@@ -228,7 +227,7 @@ impl GrepArg {
     }
 
     pub fn width(&self, focus: Focus) -> usize {
-        self.maybe_quoted_text(focus).width()
+        mame::terminal::str_cols(&self.maybe_quoted_text(focus))
     }
 
     pub fn quoted_text(&self) -> Cow<'_, str> {

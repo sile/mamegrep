@@ -1,6 +1,5 @@
 use orfail::OrFail;
 use tuinix::{KeyCode, KeyInput, TerminalPosition, TerminalStyle};
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
@@ -161,7 +160,7 @@ impl CommandEditorWidget {
             pos.col += 1; // for ' ' prefix
 
             if focused {
-                pos.col += arg.text[0..self.index].width();
+                pos.col += mame::terminal::str_cols(&arg.text[0..self.index]);
                 state.show_terminal_cursor = Some(pos);
                 return;
             } else {

@@ -2,7 +2,6 @@ use std::{num::NonZeroUsize, path::PathBuf};
 
 use orfail::OrFail;
 use tuinix::{KeyCode, KeyInput, TerminalStyle};
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     app::{AppState, Focus},
@@ -153,11 +152,11 @@ impl SearchResultWidget {
                 continue;
             };
 
-            col_offset += line_text[..i].width();
+            col_offset += mame::terminal::str_cols(&line_text[..i]);
             canvas.set_cursor_col(col_offset);
             canvas.draw(Token::with_style(hit_text, TerminalStyle::new().reverse()));
 
-            col_offset += hit_text.width();
+            col_offset += mame::terminal::str_cols(hit_text);
             line_text = &line_text[i + hit_text.len()..];
         }
     }
