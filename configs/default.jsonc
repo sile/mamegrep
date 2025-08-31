@@ -8,78 +8,154 @@
   "setup": {
     "context": "@main",
     "action": {
-      "type": "init",
-      "editing_context": "@editing",
-      "hide_legend": {"ref": "MAMEGREP_HIDE_LEGEND"},
-      "legend_labels": {
-        "@main": {"show": "s(H)ow", "hide": "(H)ide"},
-        "@editing": {"show": "", "hide": ""},
-      },
+      "type": "init-legend",
+      "hide": {"ref": "MAMEGREP_HIDE_LEGEND"},
+      "labels": {"show": "s(H)ow", "hide": "(H)ide"},
     },
   },
   "keybindings": {
     "@main": [
-      {"label": "[ACTIONS]"},
       {
-        "label": " (q)uit [ESC,C-c]",
+        "label": "(q)uit     [ESC,C-c]",
         "keys": ["q", "<ESCAPE>", "C-c"],
-        "action": {
-          "type": "quit",
-          "path": [{"ref": "HOME"}, "/.stdout"],
-          "path": {"concat": [{"ref": "HOME"}, "/.stdout"]},
-        },
-      },
-      {
-        "label": "(r)ecenter [C-l]",
-        "keys": ["r", "C-l"],
-        "action": {"type": "recenter"},
-      },
-      {
-        "label": "(↑)      [k,C-p]",
-        "keys": ["k", "C-p", "<UP>"],
-        "action": {"type": "move-up"},
-      },
-      {
-        "label": "(↓)      [j,C-n]",
-        "keys": ["j", "C-n", "<DOWN>"],
-        "action": {"type": "move-down"},
-      },
-      {
-        "label": "(←)      [h,C-b]",
-        "keys": ["h", "C-b", "<LEFT>"],
-        "action": {"type": "move-left"},
-      },
-      {
-        "label": "(→)      [l,C-f]",
-        "keys": ["l", "C-f", "<RIGHT>"],
-        "action": {"type": "move-right"},
-      },
-      {
-        "label": "(t)oggle   [TAB]",
-        "keys": ["t", "<TAB>"],
-        "action": {"type": "toggle-expand"},
-      },
-      {
-        "label": "(s)tage         ",
-        "keys": ["s"],
-        "action": {"type": "stage"},
-      },
-      {
-        "label": "(D)iscard       ",
-        "keys": ["D"],
-        "action": {"type": "discard"},
-      },
-      {
-        "label": "(u)nstage       ",
-        "keys": ["u"],
-        "action": {"type": "unstage"},
+        "action": {"type": "quit"},
       },
       {
         "keys": ["H"],
         "action": {"type": "toggle-legend"},
       },
+      // Focus switching
+      {
+        "label": "(e)dit pattern   [/]",
+        "keys": ["/", "e"],
+        "action": {"type": "set-focus", "focus": "pattern"},
+      },
+      {
+        "label": "edit (a)nd pattern  ",
+        "keys": ["a"],
+        "action": {"type": "set-focus", "focus": "and-pattern"},
+      },
+      {
+        "label": "edit (n)ot pattern  ",
+        "keys": ["n"],
+        "action": {"type": "set-focus", "focus": "not-pattern"},
+      },
+      {
+        "label": "edit (r)evision     ",
+        "keys": ["r"],
+        "action": {"type": "set-focus", "focus": "revision"},
+      },
+      {
+        "label": "edit (p)ath         ",
+        "keys": ["p"],
+        "action": {"type": "set-focus", "focus": "path"},
+      },
+      // Navigation
+      {
+        "label": "(↑)          [k,C-p]",
+        "keys": ["k", "C-p", "<UP>"],
+        "action": {"type": "cursor-up"},
+      },
+      {
+        "label": "(↓)          [j,C-n]",
+        "keys": ["j", "C-n", "<DOWN>"],
+        "action": {"type": "cursor-down"},
+      },
+      {
+        "label": "(←)          [h,C-b]",
+        "keys": ["h", "C-b", "<LEFT>"],
+        "action": {"type": "cursor-left"},
+      },
+      {
+        "label": "(→)          [l,C-f]",
+        "keys": ["l", "C-f", "<RIGHT>"],
+        "action": {"type": "cursor-right"},
+      },
+      // Expansion
+      {
+        "label": "(t)oggle file  [TAB]",
+        "keys": ["t", "<TAB>"],
+        "action": {"type": "toggle-expansion"},
+      },
+      {
+        "label": "(T)oggle all files  ",
+        "keys": ["T"],
+        "action": {"type": "toggle-all-expansion"},
+      },
+      // Grep flags
+      {
+        "keys": ["i"],
+        "action": {"type": "flip-ignore-case"},
+      },
+      {
+        "keys": ["w"],
+        "action": {"type": "flip-whole-word"},
+      },
+      {
+        "keys": ["E"],
+        "action": {"type": "flip-extended-regexp"},
+      },
+      {
+        "keys": ["F"],
+        "action": {"type": "flip-fixed-strings"},
+      },
+      {
+        "keys": ["P"],
+        "action": {"type": "flip-perl-regexp"},
+      },
+      {
+        "keys": ["v"],
+        "action": {"type": "flip-invert-match"},
+      },
     ],
-    "@editing": {
-    },
+    "@editing": [
+      // Text editing commands
+      {
+        "keys": ["<ENTER>"],
+        "action": {"type": "accept-input"},
+      },
+      {
+        "keys": ["C-g", "<ESCAPE>"],
+        "action": {"type": "set-focus", "focus": "search-result"},
+      },
+      {
+        "keys": ["<TAB>"],
+        "action": {"type": "set-focus", "focus": "search-result"},
+      },
+      {
+        "keys": ["<BACKSPACE>", "C-h"],
+        "action": {"type": "delete-backward"},
+      },
+      {
+        "keys": ["C-d", "<DELETE>"],
+        "action": {"type": "delete-char"},
+      },
+      {
+        "keys": ["C-b"],
+        "action": {"type": "move-backward"},
+      },
+      {
+        "keys": ["C-f"],
+        "action": {"type": "move-forward"},
+      },
+      {
+        "keys": ["C-a"],
+        "action": {"type": "move-to-start"},
+      },
+      {
+        "keys": ["C-e"],
+        "action": {"type": "move-to-end"},
+      },
+      {
+        "keys": ["C-k"],
+        "action": {"type": "delete-to-end"},
+      },
+      {
+        "keys": ["C-u"],
+        "action": {"type": "clear-arg"},
+      },
+      // Character insertion - this would need to be handled specially
+      // as it's context-dependent on the actual character pressed
+    ],
   },
 }

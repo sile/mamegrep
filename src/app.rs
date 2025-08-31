@@ -5,7 +5,11 @@ use std::{
     path::PathBuf,
 };
 
+use orfail::OrFail;
+use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
+
 use crate::{
+    action::Config,
     canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
     widget_command_editor::CommandEditorWidget,
@@ -13,12 +17,10 @@ use crate::{
     widget_search_result::{Cursor, SearchResultWidget},
 };
 
-use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
-
 #[derive(Debug)]
 pub struct App {
     terminal: Terminal,
+    config: Config,
     exit: bool,
     state: AppState,
     legend: LegendWidget,
@@ -27,9 +29,14 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(initial_options: GrepOptions, hide_legend: bool) -> orfail::Result<Self> {
+    pub fn new(
+        initial_options: GrepOptions,
+        hide_legend: bool,
+        config: Config,
+    ) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
+            config,
             exit: false,
             state: AppState::default(),
             legend: LegendWidget { hide: hide_legend },
