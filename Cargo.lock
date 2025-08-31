@@ -25,6 +25,7 @@ version = "0.3.0"
 dependencies = [
  "mame",
  "noargs",
+ "nojson",
  "orfail",
  "tuinix",
 ]

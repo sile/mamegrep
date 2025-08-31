@@ -13,5 +13,6 @@ categories = ["command-line-utilities"]
 [dependencies]
 mame = "0.1.5"
 noargs = "0.4.1"
+nojson = "0.3.5"
 orfail = "1.1.0"
 tuinix = "0.3.2"
