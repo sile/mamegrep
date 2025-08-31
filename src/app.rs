@@ -6,7 +6,7 @@ use std::{
 };
 
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
+use tuinix::{Terminal, TerminalEvent, TerminalPosition};
 
 use crate::{
     action::{Action, Config},
@@ -147,8 +147,8 @@ impl App {
                 {
                     self.handle_action(action).or_fail()?;
                 }
+                Ok(())
             }
-            TerminalEvent::Input(TerminalInput::Mouse(_)) => Err(orfail::Failure::new("bug")),
             TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
         }
     }
