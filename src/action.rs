@@ -34,7 +34,7 @@ pub enum Action {
     ClearArg,
     DeleteChar,
     DeleteBackward,
-    InsertChar(char),
+    InsertChar,
     MoveToStart,
     MoveToEnd,
     MoveForward,
@@ -105,14 +105,7 @@ impl<'text, 'raw> TryFrom<nojson::RawJsonValue<'text, 'raw>> for Action {
             "clear-arg" => Ok(Self::ClearArg),
             "delete-char" => Ok(Self::DeleteChar),
             "delete-backward" => Ok(Self::DeleteBackward),
-            "insert-char" => {
-                let c: String = value.to_member("char")?.required()?.try_into()?;
-                let c = c
-                    .chars()
-                    .next()
-                    .ok_or_else(|| value.invalid("char must be a single character"))?;
-                Ok(Self::InsertChar(c))
-            }
+            "insert-char" => Ok(Self::InsertChar),
             "move-to-start" => Ok(Self::MoveToStart),
             "move-to-end" => Ok(Self::MoveToEnd),
             "move-forward" => Ok(Self::MoveForward),

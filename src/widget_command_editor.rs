@@ -39,7 +39,8 @@ impl CommandEditorWidget {
                 state.focus = Focus::SearchResult;
                 state.dirty = true;
             }
-            Action::InsertChar(c) if c.is_alphanumeric() || c.is_ascii_graphic() || c == ' ' => {
+            Action::InsertChar => {
+                let c = state.last_input_char;
                 state.focused_arg_mut().or_fail()?.insert(self.index, c);
                 self.index += c.len_utf8();
                 state.dirty = true;

@@ -154,8 +154,10 @@
         "keys": ["C-u"],
         "action": {"type": "clear-arg"},
       },
-      // Character insertion - this would need to be handled specially
-      // as it's context-dependent on the actual character pressed
+      {
+        "keys": ["<PRINTABLE>"],
+        "action": {"type": "insert-char"},
+      },
     ],
   },
 }

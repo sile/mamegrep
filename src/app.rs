@@ -142,6 +142,13 @@ impl App {
         match event {
             TerminalEvent::Resize(_) => self.render().or_fail(),
             TerminalEvent::Input(input) => {
+                if let tuinix::TerminalInput::Key(tuinix::KeyInput {
+                    code: tuinix::KeyCode::Char(c),
+                    ..
+                }) = input
+                {
+                    self.state.last_input_char = c;
+                }
                 if let Some(binding) = self.config.handle_input(input)
                     && let Some(action) = binding.action.clone()
                 {
@@ -180,6 +187,7 @@ pub struct AppState {
     pub collapsed: BTreeSet<PathBuf>,
     pub show_terminal_cursor: Option<TerminalPosition>,
     pub focus: Focus,
+    pub last_input_char: char,
 }
 
 impl AppState {
