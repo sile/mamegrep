@@ -1,8 +1,10 @@
+use std::path::PathBuf;
+
 use mamegrep::{
+    action::Config,
     app::App,
     git::{self, GrepOptions},
 };
-
 use orfail::OrFail;
 
 fn main() -> noargs::Result<()> {
@@ -16,6 +18,19 @@ fn main() -> noargs::Result<()> {
         return Ok(());
     }
     noargs::HELP_FLAG.take_help(&mut args).is_present();
+
+    let config_path: Option<PathBuf> = noargs::opt("config")
+        .short('c')
+        .ty("PATH")
+        .doc(concat!(
+            "Path to configuration file\n",
+            "\n",
+            "Default: https://github.com/sile/mamegrep/blob/main/configs/default.jsonc"
+        ))
+        .example("/path/to/config.jsonc")
+        .env("MAMEGREP_CONFIG_FILE")
+        .take(&mut args)
+        .present_and_then(|a| a.value().parse())?;
 
     options.and_pattern.text = noargs::opt("and-pattern")
         .short('a')
@@ -65,7 +80,13 @@ fn main() -> noargs::Result<()> {
         std::process::exit(1);
     };
 
-    let app = App::new(options, hide_legend).or_fail()?;
+    let config = if let Some(path) = config_path {
+        Config::load_from_file(path)?
+    } else {
+        Config::load_from_str("<DEFAULT>", include_str!("../configs/default.jsonc"))?
+    };
+
+    let app = App::new(options, hide_legend, config).or_fail()?;
     app.run().or_fail()?;
 
     Ok(())
