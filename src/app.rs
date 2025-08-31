@@ -9,7 +9,7 @@ use orfail::OrFail;
 use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
 
 use crate::{
-    action::Config,
+    action::{Action, Config},
     canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
     widget_command_editor::CommandEditorWidget,
@@ -31,7 +31,7 @@ pub struct App {
 impl App {
     pub fn new(
         initial_options: GrepOptions,
-        hide_legend: bool,
+        hide_legend: bool, // TODO: remove
         config: Config,
     ) -> orfail::Result<Self> {
         let mut this = Self {
@@ -60,6 +60,9 @@ impl App {
     }
 
     pub fn run(mut self) -> orfail::Result<()> {
+        if let Some(action) = self.config.setup_action().cloned() {
+            self.handle_action(action).or_fail()?;
+        }
         self.render().or_fail()?;
 
         while !self.exit {
@@ -105,42 +108,29 @@ impl App {
         Ok(())
     }
 
-    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
-        match event {
-            TerminalEvent::Resize(_) => self.render().or_fail(),
-            TerminalEvent::Input(TerminalInput::Key(input)) => {
-                self.handle_key_input(input).or_fail()
-            }
-            TerminalEvent::Input(TerminalInput::Mouse(_)) => Err(orfail::Failure::new("bug")),
-            TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
-        }
-    }
-
-    fn handle_key_input(&mut self, input: KeyInput) -> orfail::Result<()> {
-        let editing = !matches!(self.state.focus, Focus::SearchResult);
-        match input.code {
-            KeyCode::Char('q') if !editing => {
+    fn handle_action(&mut self, action: Action) -> orfail::Result<()> {
+        match action {
+            Action::Quit => {
                 self.exit = true;
             }
-            KeyCode::Escape => {
-                self.exit = true;
-            }
-            KeyCode::Char('c') if input.ctrl => {
-                self.exit = true;
-            }
-            KeyCode::Char('H') if !editing => {
+            Action::ToggleLegend => {
                 self.legend.hide = !self.legend.hide;
+                self.state.dirty = true;
+            }
+            Action::InitLegend { hide, .. } => {
+                // TODO: set labels
+                self.legend.hide = hide;
                 self.state.dirty = true;
             }
             _ => {
                 let old_focus = self.state.focus;
                 if editing {
                     self.command_editor
-                        .handle_key_input(&mut self.state, input)
+                        .handle_action(&mut self.state, action)
                         .or_fail()?;
                 } else {
                     self.search_result
-                        .handle_key_input(&mut self.state, input)
+                        .handle_action(&mut self.state, action)
                         .or_fail()?;
                 }
 
@@ -149,12 +139,22 @@ impl App {
                 }
             }
         }
-
-        if self.state.dirty {
-            self.render().or_fail()?;
-        }
-
         Ok(())
+    }
+
+    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
+        match event {
+            TerminalEvent::Resize(_) => self.render().or_fail(),
+            TerminalEvent::Input(input) => {
+                if let Some(binding) = self.config.handle_input(input)
+                    && let Some(action) = binding.action.clone()
+                {
+                    self.handle_action(action).or_fail()?;
+                }
+            }
+            TerminalEvent::Input(TerminalInput::Mouse(_)) => Err(orfail::Failure::new("bug")),
+            TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
+        }
     }
 }
 
