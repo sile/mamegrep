@@ -48,12 +48,8 @@ impl App {
         if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
         } else {
-            this.handle_key_input(KeyInput {
-                alt: false,
-                ctrl: false,
-                code: KeyCode::Char('/'),
-            })
-            .or_fail()?;
+            this.handle_action(Action::SetFocus(Focus::Pattern))
+                .or_fail()?;
         }
 
         Ok(this)
@@ -124,7 +120,7 @@ impl App {
             }
             _ => {
                 let old_focus = self.state.focus;
-                if editing {
+                if self.state.focus.is_editing() {
                     self.command_editor
                         .handle_action(&mut self.state, action)
                         .or_fail()?;
