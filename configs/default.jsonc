@@ -124,13 +124,16 @@
       {
         "keys": ["<ENTER>"],
         "action": {"type": "accept-input"},
+        "context": "@main",
       },
       {
         "keys": ["C-g"],
         "action": {"type": "set-focus", "focus": "search-result"},
+        "context": "@main",
       },
       {
         "keys": ["<TAB>"],
+        // TODO: regrep
         "action": {"type": "set-focus", "focus": "search-result"},
       },
       {
