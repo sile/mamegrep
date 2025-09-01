@@ -55,6 +55,14 @@ impl LegendWidget {
             .filter(|_| !self.hide)
             // TODO: .filter(|b| b.action.as_ref().is_some_and(|a| a.is_applicable(tree)))
             .filter_map(|b| b.label.as_ref())
-            .map(|s| format!(" {s}"))
+            .map(|s| {
+                if s.starts_with(' ') {
+                    s.to_owned()
+                } else {
+                    let style = tuinix::TerminalStyle::new().bold();
+                    let reset = tuinix::TerminalStyle::RESET;
+                    format!("{style}{s}{reset}")
+                }
+            })
     }
 }

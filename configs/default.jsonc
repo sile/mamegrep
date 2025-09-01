@@ -15,8 +15,9 @@
   },
   "keybindings": {
     "@main": [
+      {"label": "[ACTIONS]"},
       {
-        "label": "(q)uit     [ESC,C-c]",
+        "label": " (q)uit     [ESC,C-c]",
         "keys": ["q", "<ESCAPE>", "C-c"],
         "action": {"type": "quit"},
       },
@@ -24,93 +25,100 @@
         "keys": ["H"],
         "action": {"type": "toggle-legend"},
       },
-      // Focus switching
+      {"label": ""},
+
       {
-        "label": "(e)dit pattern   [/]",
+        "label": " (e)dit pattern   [/]",
         "keys": ["/", "e"],
         "action": {"type": "set-focus", "focus": "pattern"},
         "context": "@editing",
       },
       {
-        "label": "edit (a)nd pattern  ",
+        "label": " edit (a)nd pattern  ",
         "keys": ["a"],
         "action": {"type": "set-focus", "focus": "and-pattern"},
         "context": "@editing",
       },
       {
-        "label": "edit (n)ot pattern  ",
+        "label": " edit (n)ot pattern  ",
         "keys": ["n"],
         "action": {"type": "set-focus", "focus": "not-pattern"},
         "context": "@editing",
       },
       {
-        "label": "edit (r)evision     ",
+        "label": " edit (r)evision     ",
         "keys": ["r"],
         "action": {"type": "set-focus", "focus": "revision"},
         "context": "@editing",
       },
       {
-        "label": "edit (p)ath         ",
+        "label": " edit (p)ath         ",
         "keys": ["p"],
         "action": {"type": "set-focus", "focus": "path"},
         "context": "@editing",
       },
-      // Navigation
+      {"label": ""},
+
       {
-        "label": "(↑)          [k,C-p]",
-        "keys": ["k", "C-p", "<UP>"],
-        "action": {"type": "cursor-up"},
-      },
-      {
-        "label": "(↓)          [j,C-n]",
-        "keys": ["j", "C-n", "<DOWN>"],
-        "action": {"type": "cursor-down"},
-      },
-      {
-        "label": "(←)          [h,C-b]",
-        "keys": ["h", "C-b", "<LEFT>"],
-        "action": {"type": "cursor-left"},
-      },
-      {
-        "label": "(→)          [l,C-f]",
-        "keys": ["l", "C-f", "<RIGHT>"],
-        "action": {"type": "cursor-right"},
-      },
-      // Expansion
-      {
-        "label": "(t)oggle file  [TAB]",
+        "label": " (t)oggle file  [TAB]",
         "keys": ["t", "<TAB>"],
         "action": {"type": "toggle-expansion"},
       },
       {
-        "label": "(T)oggle all files  ",
+        "label": " (T)oggle all files  ",
         "keys": ["T"],
         "action": {"type": "toggle-all-expansion"},
       },
-      // Grep flags
       {
+        "label": " (↑)          [k,C-p]",
+        "keys": ["k", "C-p", "<UP>"],
+        "action": {"type": "cursor-up"},
+      },
+      {
+        "label": " (↓)          [j,C-n]",
+        "keys": ["j", "C-n", "<DOWN>"],
+        "action": {"type": "cursor-down"},
+      },
+      {
+        "label": " (←)          [h,C-b]",
+        "keys": ["h", "C-b", "<LEFT>"],
+        "action": {"type": "cursor-left"},
+      },
+      {
+        "label": " (→)          [l,C-f]",
+        "keys": ["l", "C-f", "<RIGHT>"],
+        "action": {"type": "cursor-right"},
+      },
+      {"label": ""},
+
+      {"label": "[GIT GREP FLAGS]"},
+      {
+        "label": " --(i)gnore-case",
         "keys": ["i"],
         "action": {"type": "flip-ignore-case"},
       },
+      // TODO: --(u)ntracked
+      // TODO: --no-(I)ndex
+      // TODO: --no-(R)ecursive
       {
+        "label": " --(w)ord-regexp",
         "keys": ["w"],
         "action": {"type": "flip-whole-word"},
       },
       {
-        "keys": ["E"],
-        "action": {"type": "flip-extended-regexp"},
-      },
-      {
+        "label": " --(F)ixed-strings",
         "keys": ["F"],
         "action": {"type": "flip-fixed-strings"},
       },
       {
-        "keys": ["P"],
-        "action": {"type": "flip-perl-regexp"},
+        "label": " --(E)xtended-regexp",
+        "keys": ["E"],
+        "action": {"type": "flip-extended-regexp"},
       },
       {
-        "keys": ["v"],
-        "action": {"type": "flip-invert-match"},
+        "label": " --(P)erl-regexp",
+        "keys": ["P"],
+        "action": {"type": "flip-perl-regexp"},
       },
     ],
     "@editing": [
