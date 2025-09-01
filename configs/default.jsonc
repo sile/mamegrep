@@ -29,26 +29,31 @@
         "label": "(e)dit pattern   [/]",
         "keys": ["/", "e"],
         "action": {"type": "set-focus", "focus": "pattern"},
+        "context": "@editing",
       },
       {
         "label": "edit (a)nd pattern  ",
         "keys": ["a"],
         "action": {"type": "set-focus", "focus": "and-pattern"},
+        "context": "@editing",
       },
       {
         "label": "edit (n)ot pattern  ",
         "keys": ["n"],
         "action": {"type": "set-focus", "focus": "not-pattern"},
+        "context": "@editing",
       },
       {
         "label": "edit (r)evision     ",
         "keys": ["r"],
         "action": {"type": "set-focus", "focus": "revision"},
+        "context": "@editing",
       },
       {
         "label": "edit (p)ath         ",
         "keys": ["p"],
         "action": {"type": "set-focus", "focus": "path"},
+        "context": "@editing",
       },
       // Navigation
       {
@@ -109,13 +114,19 @@
       },
     ],
     "@editing": [
+      {
+        "label": "quit       [ESC,C-c]",
+        "keys": ["<ESCAPE>", "C-c"],
+        "action": {"type": "quit"},
+      },
+
       // Text editing commands
       {
         "keys": ["<ENTER>"],
         "action": {"type": "accept-input"},
       },
       {
-        "keys": ["C-g", "<ESCAPE>"],
+        "keys": ["C-g"],
         "action": {"type": "set-focus", "focus": "search-result"},
       },
       {
