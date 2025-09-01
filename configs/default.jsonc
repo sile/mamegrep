@@ -122,57 +122,71 @@
       },
     ],
     "@editing": [
+      {"label": "[ACTIONS]"},
       {
-        "label": "quit       [ESC,C-c]",
+        "label": " quit       [ESC,C-c]",
         "keys": ["<ESCAPE>", "C-c"],
         "action": {"type": "quit"},
       },
+      {"label": ""},
 
-      // Text editing commands
       {
+        "label": " search       [ENTER]",
         "keys": ["<ENTER>"],
         "action": {"type": "accept-input"},
         "context": "@main",
       },
       {
-        "keys": ["C-g"],
-        "action": {"type": "set-focus", "focus": "search-result"},
-        "context": "@main",
-      },
-      {
+        "label": " preview        [TAB]",
         "keys": ["<TAB>"],
         // TODO: regrep
         "action": {"type": "set-focus", "focus": "search-result"},
       },
       {
+        "label": " cancel         [C-g]",
+        "keys": ["C-g"],
+        "action": {"type": "set-focus", "focus": "search-result"},
+        "context": "@main",
+      },
+      {"label": ""},
+
+      {
+        "label": " (BACKSPACE)    [C-h]",
         "keys": ["<BACKSPACE>", "C-h"],
         "action": {"type": "delete-backward"},
       },
       {
+        "label": " (DELETE)       [C-d]",
         "keys": ["C-d", "<DELETE>"],
         "action": {"type": "delete-char"},
       },
       {
-        "keys": ["C-b"],
+        "label": " (←)            [C-b]",
+        "keys": ["<LEFT>", "C-b"],
         "action": {"type": "move-backward"},
       },
       {
-        "keys": ["C-f"],
+        "label": " (→)            [C-f]",
+        "keys": ["<RIGHT>", "C-f"],
         "action": {"type": "move-forward"},
       },
       {
+        "label": " go to head     [C-a]",
         "keys": ["C-a"],
         "action": {"type": "move-to-start"},
       },
       {
+        "label": " go to tail     [C-e]",
         "keys": ["C-e"],
         "action": {"type": "move-to-end"},
       },
       {
+        // TODO: implement
         "keys": ["C-k"],
         "action": {"type": "delete-to-end"},
       },
       {
+        // TODO: implement
         "keys": ["C-u"],
         "action": {"type": "clear-arg"},
       },
