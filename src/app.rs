@@ -83,20 +83,25 @@ impl App {
         }
 
         self.command_editor
-            .set_available_cols(self.legend.remaining_cols(self.terminal.size()));
+            .set_available_cols(self.legend.remaining_cols(
+                self.terminal.size(),
+                &self.config,
+                &self.state,
+            ));
 
         let mut canvas = Canvas::new(self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
         canvas.newline();
         self.search_result.render(&self.state, &mut canvas);
-        self.legend.render(&self.state, &mut canvas);
 
         self.command_editor.update_cursor_position(&mut self.state);
         self.terminal.set_cursor(self.state.show_terminal_cursor);
 
-        self.terminal
-            .draw(canvas.into_frame().into_terminal_frame())
+        let mut frame = canvas.into_frame().into_terminal_frame();
+        self.legend
+            .render(&mut frame, &self.config, &self.state)
             .or_fail()?;
+        self.terminal.draw(frame).or_fail()?;
 
         Ok(())
     }
