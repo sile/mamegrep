@@ -29,7 +29,6 @@ impl CommandEditorWidget {
         };
         self.original_text = arg.text.clone();
         self.index = arg.len();
-        state.dirty = true;
     }
 
     pub fn handle_action(&mut self, state: &mut AppState, action: Action) -> orfail::Result<()> {
@@ -37,53 +36,44 @@ impl CommandEditorWidget {
             Action::AcceptInput => {
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
-                state.dirty = true;
             }
             Action::InsertChar => {
                 let c = state.last_input_char;
                 state.focused_arg_mut().or_fail()?.insert(self.index, c);
                 self.index += c.len_utf8();
-                state.dirty = true;
             }
             Action::DeleteBackward => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {
                     self.index -= c.len_utf8();
                     arg.remove(self.index).or_fail()?;
-                    state.dirty = true;
                 }
             }
             Action::DeleteChar => {
                 let arg = state.focused_arg_mut().or_fail()?;
-                if arg.remove(self.index).is_some() {
-                    state.dirty = true;
-                }
+                arg.remove(self.index);
             }
             Action::MoveBackward | Action::CursorLeft => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {
                     self.index -= c.len_utf8();
-                    state.dirty = true;
                 }
             }
             Action::MoveForward | Action::CursorRight => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.next_char(self.index) {
                     self.index += c.len_utf8();
-                    state.dirty = true;
                 }
             }
             Action::MoveToStart => {
                 if self.index > 0 {
                     self.index = 0;
-                    state.dirty = true;
                 }
             }
             Action::MoveToEnd => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if self.index < arg.len() {
                     self.index = arg.len();
-                    state.dirty = true;
                 }
             }
             Action::ClearArg => {
@@ -91,7 +81,6 @@ impl CommandEditorWidget {
                 arg.text = self.original_text.clone();
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
-                state.dirty = true;
             }
             _ => {}
         }

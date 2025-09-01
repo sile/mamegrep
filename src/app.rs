@@ -102,7 +102,6 @@ impl App {
             .draw(canvas.into_frame().into_terminal_frame())
             .or_fail()?;
 
-        self.state.dirty = false;
         Ok(())
     }
 
@@ -113,12 +112,10 @@ impl App {
             }
             Action::ToggleLegend => {
                 self.legend.hide = !self.legend.hide;
-                self.state.dirty = true;
             }
             Action::InitLegend { hide, .. } => {
                 // TODO: set labels
                 self.legend.hide = hide;
-                self.state.dirty = true;
             }
             _ => {
                 let old_focus = self.state.focus;
@@ -151,10 +148,11 @@ impl App {
                 {
                     self.state.last_input_char = c;
                 }
-                if let Some(binding) = self.config.handle_input(input)
-                    && let Some(action) = binding.action.clone()
-                {
-                    self.handle_action(action).or_fail()?;
+                if let Some(binding) = self.config.handle_input(input) {
+                    if let Some(action) = binding.action.clone() {
+                        self.handle_action(action).or_fail()?;
+                    }
+                    self.render().or_fail()?;
                 }
                 Ok(())
             }
@@ -183,7 +181,6 @@ impl Focus {
 #[derive(Debug, Default)]
 pub struct AppState {
     pub grep: GrepOptions,
-    pub dirty: bool,
     pub search_result: SearchResult,
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
@@ -226,7 +223,6 @@ impl AppState {
 
     pub fn set_focus(&mut self, focus: Focus) {
         self.focus = focus;
-        self.dirty = true;
     }
 
     pub fn flip_grep_flag<F>(&mut self, f: F) -> orfail::Result<()>
@@ -252,7 +248,6 @@ impl AppState {
                 }
             }
         }
-        self.dirty = true;
         self.reset_cursor();
         Ok(())
     }
@@ -268,7 +263,6 @@ impl AppState {
         if !self.collapsed.remove(file) {
             self.collapsed.insert(file.clone());
         }
-        self.dirty = true;
     }
 
     pub fn toggle_all_expansion(&mut self) {
@@ -289,8 +283,6 @@ impl AppState {
         } else {
             self.collapsed.extend(target_files.cloned());
         }
-
-        self.dirty = true;
     }
 
     pub fn cursor_up(&mut self) {
@@ -313,7 +305,6 @@ impl AppState {
     fn cursor_up_file(&mut self) {
         if let Some(new) = self.peek_cursor_up_file().cloned() {
             self.cursor.file = Some(new);
-            self.dirty = true;
         }
     }
 
@@ -342,7 +333,6 @@ impl AppState {
             self.collapsed.remove(&file);
             self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
-            self.dirty = true;
         }
     }
 
@@ -379,7 +369,6 @@ impl AppState {
             self.collapsed.remove(&file);
             self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
-            self.dirty = true;
         }
     }
 
@@ -395,7 +384,6 @@ impl AppState {
     fn cursor_down_file(&mut self) {
         if let Some(new) = self.peek_cursor_down_file().cloned() {
             self.cursor.file = Some(new);
-            self.dirty = true;
         }
     }
 
@@ -416,13 +404,11 @@ impl AppState {
             .number;
         self.cursor.line_number = Some(line_number);
         self.collapsed.remove(file);
-        self.dirty = true;
     }
 
     pub fn cursor_left(&mut self) {
         if self.cursor.is_line_level() {
             self.cursor.line_number = None;
-            self.dirty = true;
         }
     }
 
