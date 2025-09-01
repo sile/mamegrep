@@ -29,17 +29,13 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(
-        initial_options: GrepOptions,
-        hide_legend: bool, // TODO: remove
-        config: Config,
-    ) -> orfail::Result<Self> {
+    pub fn new(initial_options: GrepOptions, config: Config) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
             config,
             exit: false,
             state: AppState::default(),
-            legend: LegendWidget { hide: hide_legend },
+            legend: LegendWidget::default(),
             command_editor: CommandEditorWidget::default(),
             search_result: SearchResultWidget::default(),
         };
@@ -113,8 +109,13 @@ impl App {
             Action::ToggleLegend => {
                 self.legend.hide = !self.legend.hide;
             }
-            Action::InitLegend { hide, .. } => {
-                // TODO: set labels
+            Action::InitLegend {
+                label_show,
+                label_hide,
+                hide,
+            } => {
+                self.legend.label_show = label_show;
+                self.legend.label_hide = label_hide;
                 self.legend.hide = hide;
             }
             _ => {

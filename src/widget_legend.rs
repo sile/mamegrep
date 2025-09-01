@@ -7,6 +7,8 @@ use crate::{
 
 #[derive(Debug, Default)]
 pub struct LegendWidget {
+    pub label_show: String,
+    pub label_hide: String,
     pub hide: bool,
 }
 
