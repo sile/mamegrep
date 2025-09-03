@@ -1,4 +1,4 @@
-use crate::{action::Config, app::AppState};
+use crate::{action::ActionBindingSystem, app::AppState};
 
 #[derive(Debug, Default)]
 pub struct LegendWidget {
@@ -11,10 +11,10 @@ impl LegendWidget {
     pub fn render(
         &self,
         frame: &mut mame::terminal::UnicodeTerminalFrame,
-        config: &Config,
+        bindings: &ActionBindingSystem,
         state: &AppState,
     ) -> std::fmt::Result {
-        let legend = mame::legend::Legend::new(self.title(), self.items(config, state));
+        let legend = mame::legend::Legend::new(self.title(), self.items(bindings, state));
         legend.render(frame)?;
         Ok(())
     }
@@ -22,14 +22,14 @@ impl LegendWidget {
     pub fn remaining_cols(
         &self,
         frame_size: tuinix::TerminalSize,
-        config: &Config,
+        bindings: &ActionBindingSystem,
         state: &AppState,
     ) -> usize {
         if self.hide {
             return frame_size.cols;
         }
 
-        let legend_size = mame::legend::Legend::new(self.title(), self.items(config, state)).size();
+        let legend_size = mame::legend::Legend::new(self.title(), self.items(bindings, state)).size();
         frame_size
             .cols
             .checked_sub(legend_size.cols)
@@ -46,12 +46,12 @@ impl LegendWidget {
 
     fn items<'a>(
         &'a self,
-        config: &'a Config,
+        bindings: &'a ActionBindingSystem,
         _state: &'a AppState,
     ) -> impl 'a + Iterator<Item = String> {
-        config
-            .current_keymap()
-            .bindings()
+        bindings
+            .current_bindings()
+            .iter()
             .filter(|_| !self.hide)
             // TODO: .filter(|b| b.action.as_ref().is_some_and(|a| a.is_applicable(tree)))
             .filter_map(|b| b.label.as_ref())

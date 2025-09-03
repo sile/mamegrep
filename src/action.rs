@@ -1,6 +1,6 @@
 use crate::app::Focus;
 
-pub type Config = mame::action::ActionConfig<Action>;
+pub type ActionBindingSystem = mame::action::ActionBindingSystem<Action>;
 
 #[derive(Debug, Clone)]
 pub enum Action {
