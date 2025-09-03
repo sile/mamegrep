@@ -225,6 +225,9 @@ impl SearchResultWidget {
             Action::ToggleExpansion => state.toggle_expansion(),
             Action::ToggleAllExpansion => state.toggle_all_expansion(),
             Action::FlipIgnoreCase => state.flip_grep_flag(|f| &mut f.ignore_case).or_fail()?,
+            Action::FlipUntracked => state.flip_grep_flag(|f| &mut f.untracked).or_fail()?,
+            Action::FlipNoIndex => state.flip_grep_flag(|f| &mut f.no_index).or_fail()?,
+            Action::FlipNoRecursive => state.flip_grep_flag(|f| &mut f.no_recursive).or_fail()?,
             Action::FlipExtendedRegexp if !(state.grep.fixed_strings || state.grep.perl_regexp) => {
                 state.flip_grep_flag(|f| &mut f.extended_regexp).or_fail()?;
             }

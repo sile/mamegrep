@@ -106,9 +106,21 @@
         "triggers": ["i"],
         "action": {"type": "flip-ignore-case"},
       },
-      // TODO: --(u)ntracked
-      // TODO: --no-(I)ndex
-      // TODO: --no-(R)ecursive
+      {
+        "label": " --(u)ntracked",
+        "triggers": ["u"],
+        "action": {"type": "flip-untracked"},
+      },
+      {
+        "label": " --no-(I)ndex",
+        "triggers": ["I"],
+        "action": {"type": "flip-no-index"},
+      },
+      {
+        "label": " --no-(R)ecursive",
+        "triggers": ["R"],
+        "action": {"type": "flip-no-recursive"},
+      },
       {
         "label": " --(w)ord-regexp",
         "triggers": ["w"],
