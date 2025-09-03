@@ -53,6 +53,10 @@ impl CommandEditorWidget {
                 let arg = state.focused_arg_mut().or_fail()?;
                 arg.remove(self.index);
             }
+            Action::DeleteToEnd => {
+                let arg = state.focused_arg_mut().or_fail()?;
+                arg.text.truncate(self.index);
+            }
             Action::MoveBackward | Action::CursorLeft => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {

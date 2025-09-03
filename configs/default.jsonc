@@ -202,7 +202,7 @@
         "action": {"type": "move-to-end"},
       },
       {
-        // TODO: implement
+        "label": " delete to end  [C-k]",
         "triggers": ["C-k"],
         "action": {"type": "delete-to-end"},
       },
