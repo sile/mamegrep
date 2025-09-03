@@ -80,6 +80,9 @@ impl CommandEditorWidget {
                     self.index = arg.len();
                 }
             }
+            Action::SetFocus(focus) => {
+                state.focus = focus;
+            }
             _ => {}
         }
 
