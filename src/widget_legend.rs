@@ -29,7 +29,8 @@ impl LegendWidget {
             return frame_size.cols;
         }
 
-        let legend_size = mame::legend::Legend::new(self.title(), self.items(bindings, state)).size();
+        let legend_size =
+            mame::legend::Legend::new(self.title(), self.items(bindings, state)).size();
         frame_size
             .cols
             .checked_sub(legend_size.cols)

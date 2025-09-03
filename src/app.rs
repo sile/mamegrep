@@ -29,7 +29,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(initial_options: GrepOptions, bindings: ActionBindingSystem) -> orfail::Result<Self> {
+    pub fn new(
+        initial_options: GrepOptions,
+        bindings: ActionBindingSystem,
+    ) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
             bindings,
