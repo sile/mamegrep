@@ -6,7 +6,7 @@
     },
   },
   "setup": {
-    "context": "@main",
+    "context": "@browse",
     "action": {
       "type": "init-legend",
       "hide": {"ref": "MAMEGREP_HIDE_LEGEND"},
@@ -14,7 +14,7 @@
     },
   },
   "bindings": {
-    "@main": [
+    "@browse": [
       {"label": "[ACTIONS]"},
       {
         "label": " (q)uit     [ESC,C-c]",
@@ -31,31 +31,31 @@
         "label": " (e)dit pattern   [/]",
         "triggers": ["/", "e"],
         "action": {"type": "set-focus", "focus": "pattern"},
-        "context": "@editing",
+        "context": "@edit",
       },
       {
         "label": " edit (a)nd pattern  ",
         "triggers": ["a"],
         "action": {"type": "set-focus", "focus": "and-pattern"},
-        "context": "@editing",
+        "context": "@edit",
       },
       {
         "label": " edit (n)ot pattern  ",
         "triggers": ["n"],
         "action": {"type": "set-focus", "focus": "not-pattern"},
-        "context": "@editing",
+        "context": "@edit",
       },
       {
         "label": " edit (r)evision     ",
         "triggers": ["r"],
         "action": {"type": "set-focus", "focus": "revision"},
-        "context": "@editing",
+        "context": "@edit",
       },
       {
         "label": " edit (p)ath         ",
         "triggers": ["p"],
         "action": {"type": "set-focus", "focus": "path"},
-        "context": "@editing",
+        "context": "@edit",
       },
       {"label": ""},
 
@@ -142,7 +142,7 @@
         "action": {"type": "flip-perl-regexp"},
       },
     ],
-    "@editing": [
+    "@edit": [
       {"label": "[ACTIONS]"},
       {
         "label": " quit       [ESC,C-c]",
@@ -155,13 +155,13 @@
         "label": " search       [ENTER]",
         "triggers": ["<ENTER>"],
         "action": {"type": "accept-input"},
-        "context": "@main",
+        "context": "@browse",
       },
       {
         "label": " cancel         [C-g]",
         "triggers": ["C-g"],
         "action": {"type": "set-focus", "focus": "search-result"},
-        "context": "@main",
+        "context": "@browse",
       },
       {"label": ""},
 

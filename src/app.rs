@@ -50,7 +50,7 @@ impl App {
             this.handle_action(Action::SetFocus(Focus::Pattern))
                 .or_fail()?;
             this.bindings
-                .set_current_context(&mame::action::ContextName::new("@editing")); // todo
+                .set_current_context(&mame::action::ContextName::new("@edit")); // todo
         }
 
         Ok(this)
