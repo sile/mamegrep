@@ -207,11 +207,6 @@
         "action": {"type": "delete-to-end"},
       },
       {
-        // TODO: implement
-        "triggers": ["C-u"],
-        "action": {"type": "clear-arg"},
-      },
-      {
         "triggers": ["<PRINTABLE>"],
         "action": {"type": "insert-char"},
       },

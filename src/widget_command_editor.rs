@@ -76,12 +76,6 @@ impl CommandEditorWidget {
                     self.index = arg.len();
                 }
             }
-            Action::ClearArg => {
-                let arg = state.focused_arg_mut().or_fail()?;
-                arg.text = self.original_text.clone();
-                state.regrep().or_fail()?;
-                state.focus = Focus::SearchResult;
-            }
             _ => {}
         }
 
