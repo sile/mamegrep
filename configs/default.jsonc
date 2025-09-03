@@ -158,12 +158,6 @@
         "context": "@main",
       },
       {
-        "label": " preview        [TAB]",
-        "triggers": ["<TAB>"],
-        // TODO: regrep
-        "action": {"type": "set-focus", "focus": "search-result"},
-      },
-      {
         "label": " cancel         [C-g]",
         "triggers": ["C-g"],
         "action": {"type": "set-focus", "focus": "search-result"},
