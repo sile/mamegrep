@@ -89,6 +89,15 @@
         "triggers": ["l", "C-f", "<RIGHT>"],
         "action": {"type": "cursor-right"},
       },
+      {
+        "label": " (+|-) context lines ",
+        "triggers": ["+"],
+        "action": {"type": "increase-context"},
+      },
+      {
+        "triggers": ["-"],
+        "action": {"type": "decrease-context"},
+      },
       {"label": ""},
 
       {"label": "[GIT GREP FLAGS]"},

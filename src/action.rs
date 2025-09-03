@@ -24,8 +24,8 @@ pub enum Action {
     FlipExtendedRegexp,
     FlipFixedStrings,
     FlipPerlRegexp,
-    FlipContextBefore, // TODO: rename
-    FlipContext,       // TODO: rename
+    DecreaseContext,
+    IncreaseContext,
     ClearArg,
     DeleteChar,
     DeleteBackward,
@@ -90,8 +90,8 @@ impl<'text, 'raw> TryFrom<nojson::RawJsonValue<'text, 'raw>> for Action {
             "flip-extended-regexp" => Ok(Self::FlipExtendedRegexp),
             "flip-fixed-strings" => Ok(Self::FlipFixedStrings),
             "flip-perl-regexp" => Ok(Self::FlipPerlRegexp),
-            "flip-context-before" => Ok(Self::FlipContextBefore),
-            "flip-context" => Ok(Self::FlipContext),
+            "decrease-context" => Ok(Self::DecreaseContext),
+            "increase-context" => Ok(Self::IncreaseContext),
             "clear-arg" => Ok(Self::ClearArg),
             "delete-char" => Ok(Self::DeleteChar),
             "delete-backward" => Ok(Self::DeleteBackward),

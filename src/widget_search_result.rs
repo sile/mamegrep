@@ -234,13 +234,13 @@ impl SearchResultWidget {
             Action::FlipPerlRegexp if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
                 state.flip_grep_flag(|f| &mut f.perl_regexp).or_fail()?;
             }
-            Action::FlipContext if state.cursor.is_line_level() => {
+            Action::IncreaseContext if state.cursor.is_line_level() => {
                 if state.grep.context_lines < ContextLines::MAX {
                     state.grep.context_lines.0 += 1;
                     state.regrep().or_fail()?;
                 }
             }
-            Action::FlipContextBefore if state.cursor.is_line_level() => {
+            Action::DecreaseContext if state.cursor.is_line_level() => {
                 if state.grep.context_lines > ContextLines::MIN {
                     state.grep.context_lines.0 -= 1;
                     state.regrep().or_fail()?;
