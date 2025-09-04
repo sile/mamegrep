@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
+use mame::action::BindingConfig;
 use mamegrep::{
-    action::ActionBindingSystem,
     app::App,
     git::{self, GrepOptions},
 };
@@ -75,13 +75,13 @@ fn main() -> noargs::Result<()> {
         std::process::exit(1);
     };
 
-    let bindings = if let Some(path) = config_path {
-        ActionBindingSystem::load_from_file(path)?
+    let config = if let Some(path) = config_path {
+        BindingConfig::load_from_file(path)?
     } else {
-        ActionBindingSystem::load_from_str("<DEFAULT>", include_str!("../configs/default.jsonc"))?
+        BindingConfig::load_from_str("<DEFAULT>", include_str!("../configs/default.jsonc"))?
     };
 
-    let app = App::new(options, bindings).or_fail()?;
+    let app = App::new(options, config).or_fail()?;
     app.run().or_fail()?;
 
     Ok(())

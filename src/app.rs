@@ -5,11 +5,12 @@ use std::{
     path::PathBuf,
 };
 
+use mame::action::{BindingConfig, BindingContextName};
 use orfail::OrFail;
 use tuinix::{Terminal, TerminalEvent, TerminalPosition};
 
 use crate::{
-    action::{Action, ActionBindingSystem},
+    action::Action,
     canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
     widget_command_editor::CommandEditorWidget,
@@ -20,7 +21,8 @@ use crate::{
 #[derive(Debug)]
 pub struct App {
     terminal: Terminal,
-    bindings: ActionBindingSystem,
+    config: BindingConfig<Action>,
+    context: BindingContextName,
     exit: bool,
     state: AppState,
     legend: LegendWidget,
@@ -31,11 +33,12 @@ pub struct App {
 impl App {
     pub fn new(
         initial_options: GrepOptions,
-        bindings: ActionBindingSystem,
+        config: BindingConfig<Action>,
     ) -> orfail::Result<Self> {
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
-            bindings,
+            context: config.initial_context().clone(),
+            config,
             exit: false,
             state: AppState::default(),
             legend: LegendWidget::default(),
@@ -49,15 +52,14 @@ impl App {
         } else {
             this.handle_action(Action::SetFocus(Focus::Pattern))
                 .or_fail()?;
-            this.bindings
-                .set_current_context(&mame::action::ContextName::new("@edit")); // todo
+            this.context = BindingContextName::new("@edit"); // todo
         }
 
         Ok(this)
     }
 
     pub fn run(mut self) -> orfail::Result<()> {
-        if let Some(action) = self.bindings.setup_action().cloned() {
+        if let Some(action) = self.config.setup_action().cloned() {
             self.handle_action(action).or_fail()?;
         }
         self.render().or_fail()?;
@@ -88,7 +90,7 @@ impl App {
         self.command_editor
             .set_available_cols(self.legend.remaining_cols(
                 self.terminal.size(),
-                &self.bindings,
+                &self.config.get_bindings(&self.context).or_fail()?,
                 &self.state,
             ));
 
@@ -102,7 +104,11 @@ impl App {
 
         let mut frame = canvas.into_frame().into_terminal_frame();
         self.legend
-            .render(&mut frame, &self.bindings, &self.state)
+            .render(
+                &mut frame,
+                &self.config.get_bindings(&self.context).or_fail()?,
+                &self.state,
+            )
             .or_fail()?;
         self.terminal.draw(frame).or_fail()?;
 
@@ -157,11 +163,15 @@ impl App {
                 {
                     self.state.last_input_char = c;
                 }
-                if let Some(binding) = self.bindings.handle_input(input) {
-                    if let Some(action) = binding.action.clone() {
+                let bindings = self.config.get_bindings(&self.context).or_fail()?;
+                if let Some(binding) = bindings.iter().find(|b| b.matches(input)).cloned() {
+                    if let Some(action) = binding.action {
                         self.handle_action(action).or_fail()?;
                     }
                     self.render().or_fail()?;
+                    if let Some(context) = binding.context {
+                        self.context = context;
+                    }
                 }
                 Ok(())
             }

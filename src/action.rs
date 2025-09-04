@@ -1,7 +1,5 @@
 use crate::app::Focus;
 
-pub type ActionBindingSystem = mame::action::ActionBindingSystem<Action>;
-
 #[derive(Debug, Clone)]
 pub enum Action {
     Quit,
