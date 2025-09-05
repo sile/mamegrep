@@ -205,6 +205,16 @@ impl App {
         self.render().or_fail()?;
 
         let mut command = command.clone();
+
+        let mut grep_command = "git".to_owned();
+        for arg in self.state.grep.args(Focus::default()) {
+            grep_command.push(' ');
+            grep_command.push_str(&arg.quoted_text());
+        }
+        command
+            .envs
+            .insert("MAMEGREP_GREP_COMMAND".to_owned(), grep_command);
+
         if let Some(file) = &self.state.cursor.file {
             command
                 .envs
