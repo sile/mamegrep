@@ -39,6 +39,23 @@ pub enum Action {
 }
 
 impl Action {
+    pub fn is_flag_set(&self, state: &AppState) -> bool {
+        match self {
+            // Git grep flags that can be toggled
+            Action::FlipIgnoreCase => state.grep.ignore_case,
+            Action::FlipUntracked => state.grep.untracked,
+            Action::FlipNoIndex => state.grep.no_index,
+            Action::FlipNoRecursive => state.grep.no_recursive,
+            Action::FlipWholeWord => state.grep.word_regexp,
+            Action::FlipFixedStrings => state.grep.fixed_strings,
+            Action::FlipExtendedRegexp => state.grep.extended_regexp,
+            Action::FlipPerlRegexp => state.grep.perl_regexp,
+
+            // All other actions don't represent toggleable flags
+            _ => false,
+        }
+    }
+
     pub fn is_applicable(&self, state: &AppState) -> bool {
         match self {
             // Always applicable actions

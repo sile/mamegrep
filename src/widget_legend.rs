@@ -56,15 +56,19 @@ impl LegendWidget {
             .iter()
             .filter(|_| !self.hide)
             .filter(|b| b.action.as_ref().is_none_or(|a| a.is_applicable(state)))
-            .filter_map(|b| b.label.as_ref())
-            .map(|s| {
-                if s.starts_with(' ') {
-                    s.to_owned()
-                } else {
-                    let style = tuinix::TerminalStyle::new().bold();
-                    let reset = tuinix::TerminalStyle::RESET;
-                    format!("{style}{s}{reset}")
-                }
+            .filter_map(|b| {
+                let label = b.label.as_ref()?;
+                Some(
+                    if label.starts_with('[')
+                        || b.action.as_ref().is_some_and(|a| a.is_flag_set(state))
+                    {
+                        let style = tuinix::TerminalStyle::new().bold();
+                        let reset = tuinix::TerminalStyle::RESET;
+                        format!("{style}{label}{reset}")
+                    } else {
+                        label.to_owned()
+                    },
+                )
             })
     }
 }
