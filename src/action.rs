@@ -1,4 +1,4 @@
-use crate::app::Focus;
+use crate::app::{AppState, Focus};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -38,7 +38,61 @@ pub enum Action {
     AcceptInput,
 }
 
-impl Action {}
+impl Action {
+    pub fn is_applicable(&self, state: &AppState) -> bool {
+        match self {
+            // Always applicable actions
+            Action::Quit
+            | Action::ToggleLegend
+            | Action::InitLegend { .. }
+            | Action::SetFocus(_)
+            | Action::FlipIgnoreCase
+            | Action::FlipUntracked
+            | Action::FlipNoIndex
+            | Action::FlipNoRecursive
+            | Action::FlipWholeWord => true,
+
+            // Actions that depend on current focus
+            Action::AcceptInput
+            | Action::InsertChar
+            | Action::DeleteBackward
+            | Action::DeleteChar
+            | Action::DeleteToEnd
+            | Action::MoveToStart
+            | Action::MoveToEnd
+            | Action::MoveForward
+            | Action::MoveBackward => state.focus.is_editing(),
+
+            // Navigation actions that depend on search results
+            Action::CursorUp => state.can_cursor_up(),
+            Action::CursorDown => state.can_cursor_down(),
+            Action::CursorLeft => state.cursor.is_line_level(),
+            Action::CursorRight => state.cursor.is_file_level(),
+
+            // Toggle actions that depend on cursor position
+            Action::ToggleExpansion => state.cursor.is_file_level(),
+            Action::ToggleAllExpansion => !state.search_result.is_empty(),
+
+            // Context actions that depend on cursor being at line level
+            Action::IncreaseContext => {
+                state.cursor.is_line_level()
+                    && state.grep.context_lines < crate::git::ContextLines::MAX
+            }
+            Action::DecreaseContext => {
+                state.cursor.is_line_level()
+                    && state.grep.context_lines > crate::git::ContextLines::MIN
+            }
+
+            // Regex flag actions with mutual exclusions
+            Action::FlipFixedStrings => !(state.grep.perl_regexp || state.grep.extended_regexp),
+            Action::FlipExtendedRegexp => !(state.grep.fixed_strings || state.grep.perl_regexp),
+            Action::FlipPerlRegexp => !(state.grep.fixed_strings || state.grep.extended_regexp),
+
+            // Deprecated/unused actions
+            Action::FlipCaseSensitive => false,
+        }
+    }
+}
 
 impl mame::action::Action for Action {}
 

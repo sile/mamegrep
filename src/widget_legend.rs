@@ -50,12 +50,12 @@ impl LegendWidget {
     fn items<'a>(
         &'a self,
         bindings: &'a [Binding<Action>],
-        _state: &'a AppState,
+        state: &'a AppState,
     ) -> impl 'a + Iterator<Item = String> {
         bindings
             .iter()
             .filter(|_| !self.hide)
-            // TODO: .filter(|b| b.action.as_ref().is_some_and(|a| a.is_applicable(tree)))
+            .filter(|b| b.action.as_ref().is_none_or(|a| a.is_applicable(state)))
             .filter_map(|b| b.label.as_ref())
             .map(|s| {
                 if s.starts_with(' ') {
