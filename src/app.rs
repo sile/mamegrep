@@ -94,7 +94,7 @@ impl App {
         self.command_editor
             .set_available_cols(self.legend.remaining_cols(
                 self.terminal.size(),
-                &self.config.get_bindings(&self.context).or_fail()?,
+                self.config.get_bindings(&self.context).or_fail()?,
                 &self.state,
             ));
 
@@ -110,7 +110,7 @@ impl App {
         self.legend
             .render(
                 &mut frame,
-                &self.config.get_bindings(&self.context).or_fail()?,
+                self.config.get_bindings(&self.context).or_fail()?,
                 &self.state,
             )
             .or_fail()?;
