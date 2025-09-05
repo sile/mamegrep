@@ -60,18 +60,6 @@
       {"label": ""},
 
       {
-        "label": " (s)et-anchor",
-        "triggers": ["s"],
-        "action": {
-          "type": "execute-command",
-          "command": "fish",
-          "args": [
-            "-c",
-            "echo $MAMEGREP_FILE:$MAMEGREP_LINE | tee ~/.kk.clipboard",
-          ],
-        }
-      },
-      {
         "label": " (t)oggle file  [TAB]",
         "triggers": ["t", "<TAB>"],
         "action": {"type": "toggle-expansion"},
@@ -109,6 +97,32 @@
       {
         "triggers": ["-"],
         "action": {"type": "decrease-context"},
+      },
+      {"label": ""},
+
+      {
+        "label": " (k)k-anchor",
+        "triggers": ["k"],
+        "action": {
+          "type": "execute-command",
+          "command": "fish",
+          "args": [
+            "-c",
+            "echo $MAMEGREP_FILE:$MAMEGREP_LINE | tee ~/.kk.clipboard",
+          ],
+        }
+      },
+      {
+        "label": " (G)repatch",
+        "triggers": ["G"],
+        "action": {
+          "type": "execute-command",
+          "command": "fish",
+          "args": [
+            "-c",
+            "tmux split-window -v \"$MAMEGREP_GREP_COMMAND | grepatch -e\"",
+          ],
+        }
       },
       {"label": ""},
 
