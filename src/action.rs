@@ -67,7 +67,8 @@ impl Action {
             | Action::FlipUntracked
             | Action::FlipNoIndex
             | Action::FlipNoRecursive
-            | Action::FlipWholeWord => true,
+            | Action::FlipWholeWord
+            | Action::ExecuteCommand(_) => true,
 
             // Actions that depend on current focus
             Action::AcceptInput
@@ -90,23 +91,14 @@ impl Action {
             Action::ToggleExpansion => state.cursor.is_file_level(),
             Action::ToggleAllExpansion => !state.search_result.is_empty(),
 
-            // Context actions that depend on cursor being at line level
-            Action::IncreaseContext => {
-                state.cursor.is_line_level()
-                    && state.grep.context_lines < crate::git::ContextLines::MAX
-            }
-            Action::DecreaseContext => {
-                state.cursor.is_line_level()
-                    && state.grep.context_lines > crate::git::ContextLines::MIN
-            }
+            // Context actions that depend on line level
+            Action::IncreaseContext => state.cursor.is_line_level(),
+            Action::DecreaseContext => state.cursor.is_line_level(),
 
             // Regex flag actions with mutual exclusions
             Action::FlipFixedStrings => !(state.grep.perl_regexp || state.grep.extended_regexp),
             Action::FlipExtendedRegexp => !(state.grep.fixed_strings || state.grep.perl_regexp),
             Action::FlipPerlRegexp => !(state.grep.fixed_strings || state.grep.extended_regexp),
-
-            // External commands are always applicable
-            Action::ExecuteCommand(_) => true,
         }
     }
 }
