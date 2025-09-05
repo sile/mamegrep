@@ -35,6 +35,12 @@ impl App {
         initial_options: GrepOptions,
         config: BindingConfig<Action>,
     ) -> orfail::Result<Self> {
+        let binding_for_editing = config
+            .all_bindings()
+            .flat_map(|(_, bindings)| bindings.iter())
+            .find(|b| matches!(b.action, Some(Action::SetFocus(Focus::Pattern))))
+            .cloned();
+
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
             context: config.initial_context().clone(),
@@ -49,19 +55,8 @@ impl App {
         this.state.grep = initial_options;
         if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
-        } else if let Some(b) = this
-            .config
-            .all_bindings()
-            .collect::<Vec<_>>()
-            .into_iter()
-            .find_map(|(_, bindings)| {
-                bindings
-                    .iter()
-                    .find(|b| matches!(b.action, Some(Action::SetFocus(Focus::Pattern))))
-                    .cloned()
-            })
-        {
-            this.handle_binding(b.clone()).or_fail()?;
+        } else if let Some(b) = binding_for_editing {
+            this.handle_binding(b).or_fail()?;
         }
 
         Ok(this)
