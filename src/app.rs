@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-use mame::action::{BindingConfig, BindingContextName};
+use mame::action::{Binding, BindingConfig, BindingContextName};
 use orfail::OrFail;
 use tuinix::{Terminal, TerminalEvent, TerminalPosition};
 
@@ -49,10 +49,19 @@ impl App {
         this.state.grep = initial_options;
         if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
-        } else {
-            this.handle_action(Action::SetFocus(Focus::Pattern))
-                .or_fail()?;
-            this.context = BindingContextName::new("@edit"); // todo
+        } else if let Some(b) = this
+            .config
+            .all_bindings()
+            .collect::<Vec<_>>()
+            .into_iter()
+            .find_map(|(_, bindings)| {
+                bindings
+                    .iter()
+                    .find(|b| matches!(b.action, Some(Action::SetFocus(Focus::Pattern))))
+                    .cloned()
+            })
+        {
+            this.handle_binding(b.clone()).or_fail()?;
         }
 
         Ok(this)
@@ -165,18 +174,23 @@ impl App {
                 }
                 let bindings = self.config.get_bindings(&self.context).or_fail()?;
                 if let Some(binding) = bindings.iter().find(|b| b.matches(input)).cloned() {
-                    if let Some(action) = binding.action {
-                        self.handle_action(action).or_fail()?;
-                    }
+                    self.handle_binding(binding).or_fail()?;
                     self.render().or_fail()?;
-                    if let Some(context) = binding.context {
-                        self.context = context;
-                    }
                 }
                 Ok(())
             }
             TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
         }
+    }
+
+    fn handle_binding(&mut self, binding: Binding<Action>) -> orfail::Result<()> {
+        if let Some(action) = binding.action {
+            self.handle_action(action).or_fail()?;
+        }
+        if let Some(context) = binding.context {
+            self.context = context;
+        }
+        Ok(())
     }
 }
 
