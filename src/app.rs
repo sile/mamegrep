@@ -204,6 +204,17 @@ impl App {
         self.preview = Some(mame::preview::TextPreview::new(Some(executing_pane), None));
         self.render().or_fail()?;
 
+        let mut command = command.clone();
+        if let Some(file) = &self.state.cursor.file {
+            command
+                .envs
+                .insert("MAMEGREP_FILE".to_owned(), file.display().to_string());
+        }
+        if let Some(line_number) = self.state.cursor.line_number {
+            command
+                .envs
+                .insert("MAMEGREP_LINE".to_owned(), line_number.to_string());
+        }
         let output = command.execute().or_fail()?;
 
         // If the command was successful, re-run the grep to refresh results
