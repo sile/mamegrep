@@ -28,6 +28,7 @@ pub struct App {
     legend: LegendWidget,
     command_editor: CommandEditorWidget,
     search_result: SearchResultWidget,
+    preview: Option<mame::preview::TextPreview>,
 }
 
 impl App {
@@ -50,6 +51,7 @@ impl App {
             legend: LegendWidget::default(),
             command_editor: CommandEditorWidget::default(),
             search_result: SearchResultWidget::default(),
+            preview: None,
         };
 
         this.state.grep = initial_options;
@@ -107,6 +109,9 @@ impl App {
         self.terminal.set_cursor(self.state.show_terminal_cursor);
 
         let mut frame = canvas.into_frame().into_terminal_frame();
+        if let Some(preview) = &mut self.preview {
+            preview.render(&mut frame).or_fail()?;
+        }
         self.legend
             .render(
                 &mut frame,
@@ -135,6 +140,9 @@ impl App {
                 self.legend.label_show = label_show;
                 self.legend.label_hide = label_hide;
                 self.legend.hide = hide;
+            }
+            Action::ExecuteCommand(command) => {
+                self.execute_command(&command).or_fail()?;
             }
             _ => {
                 let old_focus = self.state.focus;
@@ -185,6 +193,32 @@ impl App {
         if let Some(context) = binding.context {
             self.context = context;
         }
+        Ok(())
+    }
+
+    fn execute_command(&mut self, command: &mame::command::ExternalCommand) -> orfail::Result<()> {
+        let executing_pane = mame::preview::TextPreviewPane::new(
+            "executing",
+            &format!("$ {}", command.command_line()),
+        );
+        self.preview = Some(mame::preview::TextPreview::new(Some(executing_pane), None));
+        self.render().or_fail()?;
+
+        let output = command.execute().or_fail()?;
+
+        // If the command was successful, re-run the grep to refresh results
+        if output.status.success() {
+            self.state.regrep().or_fail()?;
+        }
+
+        let stdout_pane =
+            mame::preview::TextPreviewPane::new("stdout", &String::from_utf8_lossy(&output.stdout));
+        let stderr_pane =
+            mame::preview::TextPreviewPane::new("stderr", &String::from_utf8_lossy(&output.stderr));
+        self.preview = Some(mame::preview::TextPreview::new(
+            Some(stdout_pane),
+            Some(stderr_pane),
+        ));
         Ok(())
     }
 }

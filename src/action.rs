@@ -16,7 +16,6 @@ pub enum Action {
     CursorRight,
     ToggleExpansion,
     ToggleAllExpansion,
-    FlipCaseSensitive,
     FlipWholeWord,
     FlipIgnoreCase,
     FlipUntracked,
@@ -36,6 +35,7 @@ pub enum Action {
     MoveBackward,
     DeleteToEnd,
     AcceptInput,
+    ExecuteCommand(mame::command::ExternalCommand),
 }
 
 impl Action {
@@ -105,8 +105,8 @@ impl Action {
             Action::FlipExtendedRegexp => !(state.grep.fixed_strings || state.grep.perl_regexp),
             Action::FlipPerlRegexp => !(state.grep.fixed_strings || state.grep.extended_regexp),
 
-            // Deprecated/unused actions
-            Action::FlipCaseSensitive => false,
+            // External commands are always applicable
+            Action::ExecuteCommand(_) => true,
         }
     }
 }
@@ -155,7 +155,6 @@ impl<'text, 'raw> TryFrom<nojson::RawJsonValue<'text, 'raw>> for Action {
             "cursor-right" => Ok(Self::CursorRight),
             "toggle-expansion" => Ok(Self::ToggleExpansion),
             "toggle-all-expansion" => Ok(Self::ToggleAllExpansion),
-            "flip-case-sensitive" => Ok(Self::FlipCaseSensitive),
             "flip-whole-word" => Ok(Self::FlipWholeWord),
             "flip-ignore-case" => Ok(Self::FlipIgnoreCase),
             "flip-untracked" => Ok(Self::FlipUntracked),
@@ -175,6 +174,7 @@ impl<'text, 'raw> TryFrom<nojson::RawJsonValue<'text, 'raw>> for Action {
             "move-backward" => Ok(Self::MoveBackward),
             "delete-to-end" => Ok(Self::DeleteToEnd),
             "accept-input" => Ok(Self::AcceptInput),
+            "execute-command" => Ok(Self::ExecuteCommand(value.try_into()?)),
             type_name => Err(ty.invalid(format!("unknown action type: {type_name:?}"))),
         }
     }
