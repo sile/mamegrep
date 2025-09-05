@@ -6,7 +6,6 @@ use tuinix::{TerminalPosition, TerminalSize, TerminalStyle};
 pub struct Canvas {
     frame: Frame,
     cursor: TerminalPosition,
-    col_offset: usize,
     row_offset: usize,
     auto_scroll: bool,
 }
@@ -16,7 +15,6 @@ impl Canvas {
         Self {
             frame: Frame::new(frame_size),
             cursor: TerminalPosition::ZERO,
-            col_offset: 0,
             row_offset: 0,
             auto_scroll: false,
         }
@@ -46,10 +44,6 @@ impl Canvas {
         self.cursor.col = col;
     }
 
-    pub fn set_col_offset(&mut self, offset: usize) {
-        self.col_offset = offset;
-    }
-
     pub fn draw(&mut self, token: Token) {
         let cols = token.cols();
         self.draw_at(self.cursor, token);
@@ -66,7 +60,7 @@ impl Canvas {
         self.cursor.col = 0;
     }
 
-    pub fn draw_at(&mut self, mut position: TerminalPosition, token: Token) {
+    pub fn draw_at(&mut self, position: TerminalPosition, token: Token) {
         if position.row < self.row_offset {
             return;
         }
@@ -78,8 +72,6 @@ impl Canvas {
                 return;
             }
         }
-
-        position.col += self.col_offset;
 
         let i = position.row - self.row_offset;
         let line = &mut self.frame.lines[i];

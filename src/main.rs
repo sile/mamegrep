@@ -1,8 +1,10 @@
+use std::path::PathBuf;
+
+use mame::action::BindingConfig;
 use mamegrep::{
     app::App,
     git::{self, GrepOptions},
 };
-
 use orfail::OrFail;
 
 fn main() -> noargs::Result<()> {
@@ -16,6 +18,19 @@ fn main() -> noargs::Result<()> {
         return Ok(());
     }
     noargs::HELP_FLAG.take_help(&mut args).is_present();
+
+    let config_path: Option<PathBuf> = noargs::opt("config")
+        .short('c')
+        .ty("PATH")
+        .doc(concat!(
+            "Path to configuration file\n",
+            "\n",
+            "Default: https://github.com/sile/mamegrep/blob/main/configs/default.jsonc"
+        ))
+        .example("/path/to/config.jsonc")
+        .env("MAMEGREP_CONFIG_FILE")
+        .take(&mut args)
+        .present_and_then(|a| a.value().parse())?;
 
     options.and_pattern.text = noargs::opt("and-pattern")
         .short('a')
@@ -45,11 +60,6 @@ fn main() -> noargs::Result<()> {
         .take(&mut args)
         .present_and_then(|a| a.value().parse())?
         .unwrap_or_default();
-    let hide_legend = noargs::flag("hide-legend")
-        .doc("Hide the legend by default")
-        .env("MAMEGREP_HIDE_LEGEND")
-        .take(&mut args)
-        .is_present();
     options.pattern.text = noargs::arg("PATTERN")
         .doc("Search pattern")
         .take(&mut args)
@@ -65,7 +75,13 @@ fn main() -> noargs::Result<()> {
         std::process::exit(1);
     };
 
-    let app = App::new(options, hide_legend).or_fail()?;
+    let config = if let Some(path) = config_path {
+        BindingConfig::load_from_file(path)?
+    } else {
+        BindingConfig::load_from_str("<DEFAULT>", include_str!("../configs/default.jsonc"))?
+    };
+
+    let app = App::new(options, config).or_fail()?;
     app.run().or_fail()?;
 
     Ok(())

@@ -5,7 +5,12 @@ use std::{
     path::PathBuf,
 };
 
+use mame::action::{Binding, BindingConfig, BindingContextName};
+use orfail::OrFail;
+use tuinix::{Terminal, TerminalEvent, TerminalPosition};
+
 use crate::{
+    action::Action,
     canvas::Canvas,
     git::{GrepArg, GrepOptions, SearchResult},
     widget_command_editor::CommandEditorWidget,
@@ -13,12 +18,11 @@ use crate::{
     widget_search_result::{Cursor, SearchResultWidget},
 };
 
-use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, Terminal, TerminalEvent, TerminalInput, TerminalPosition};
-
 #[derive(Debug)]
 pub struct App {
     terminal: Terminal,
+    config: BindingConfig<Action>,
+    context: BindingContextName,
     exit: bool,
     state: AppState,
     legend: LegendWidget,
@@ -27,12 +31,23 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(initial_options: GrepOptions, hide_legend: bool) -> orfail::Result<Self> {
+    pub fn new(
+        initial_options: GrepOptions,
+        config: BindingConfig<Action>,
+    ) -> orfail::Result<Self> {
+        let binding_for_editing = config
+            .all_bindings()
+            .flat_map(|(_, bindings)| bindings.iter())
+            .find(|b| matches!(b.action, Some(Action::SetFocus(Focus::Pattern))))
+            .cloned();
+
         let mut this = Self {
             terminal: Terminal::new().or_fail()?,
+            context: config.initial_context().clone(),
+            config,
             exit: false,
             state: AppState::default(),
-            legend: LegendWidget { hide: hide_legend },
+            legend: LegendWidget::default(),
             command_editor: CommandEditorWidget::default(),
             search_result: SearchResultWidget::default(),
         };
@@ -40,19 +55,17 @@ impl App {
         this.state.grep = initial_options;
         if !this.state.grep.pattern.is_empty() {
             this.state.regrep().or_fail()?;
-        } else {
-            this.handle_key_input(KeyInput {
-                alt: false,
-                ctrl: false,
-                code: KeyCode::Char('/'),
-            })
-            .or_fail()?;
+        } else if let Some(b) = binding_for_editing {
+            this.handle_binding(b).or_fail()?;
         }
 
         Ok(this)
     }
 
     pub fn run(mut self) -> orfail::Result<()> {
+        if let Some(action) = self.config.setup_action().cloned() {
+            self.handle_action(action).or_fail()?;
+        }
         self.render().or_fail()?;
 
         while !self.exit {
@@ -79,61 +92,59 @@ impl App {
         }
 
         self.command_editor
-            .set_available_cols(self.legend.remaining_cols(self.terminal.size()));
+            .set_available_cols(self.legend.remaining_cols(
+                self.terminal.size(),
+                self.config.get_bindings(&self.context).or_fail()?,
+                &self.state,
+            ));
 
         let mut canvas = Canvas::new(self.terminal.size());
         self.command_editor.render(&self.state, &mut canvas);
         canvas.newline();
         self.search_result.render(&self.state, &mut canvas);
-        self.legend.render(&self.state, &mut canvas);
 
         self.command_editor.update_cursor_position(&mut self.state);
         self.terminal.set_cursor(self.state.show_terminal_cursor);
 
-        self.terminal
-            .draw(canvas.into_frame().into_terminal_frame())
+        let mut frame = canvas.into_frame().into_terminal_frame();
+        self.legend
+            .render(
+                &mut frame,
+                self.config.get_bindings(&self.context).or_fail()?,
+                &self.state,
+            )
             .or_fail()?;
+        self.terminal.draw(frame).or_fail()?;
 
-        self.state.dirty = false;
         Ok(())
     }
 
-    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
-        match event {
-            TerminalEvent::Resize(_) => self.render().or_fail(),
-            TerminalEvent::Input(TerminalInput::Key(input)) => {
-                self.handle_key_input(input).or_fail()
-            }
-            TerminalEvent::Input(TerminalInput::Mouse(_)) => Err(orfail::Failure::new("bug")),
-            TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
-        }
-    }
-
-    fn handle_key_input(&mut self, input: KeyInput) -> orfail::Result<()> {
-        let editing = !matches!(self.state.focus, Focus::SearchResult);
-        match input.code {
-            KeyCode::Char('q') if !editing => {
+    fn handle_action(&mut self, action: Action) -> orfail::Result<()> {
+        match action {
+            Action::Quit => {
                 self.exit = true;
             }
-            KeyCode::Escape => {
-                self.exit = true;
-            }
-            KeyCode::Char('c') if input.ctrl => {
-                self.exit = true;
-            }
-            KeyCode::Char('H') if !editing => {
+            Action::ToggleLegend => {
                 self.legend.hide = !self.legend.hide;
-                self.state.dirty = true;
+            }
+            Action::InitLegend {
+                label_show,
+                label_hide,
+                hide,
+            } => {
+                self.legend.label_show = label_show;
+                self.legend.label_hide = label_hide;
+                self.legend.hide = hide;
             }
             _ => {
                 let old_focus = self.state.focus;
-                if editing {
+                if self.state.focus.is_editing() {
                     self.command_editor
-                        .handle_key_input(&mut self.state, input)
+                        .handle_action(&mut self.state, action)
                         .or_fail()?;
                 } else {
                     self.search_result
-                        .handle_key_input(&mut self.state, input)
+                        .handle_action(&mut self.state, action)
                         .or_fail()?;
                 }
 
@@ -142,11 +153,38 @@ impl App {
                 }
             }
         }
+        Ok(())
+    }
 
-        if self.state.dirty {
-            self.render().or_fail()?;
+    fn handle_event(&mut self, event: TerminalEvent) -> orfail::Result<()> {
+        match event {
+            TerminalEvent::Resize(_) => self.render().or_fail(),
+            TerminalEvent::Input(input) => {
+                if let tuinix::TerminalInput::Key(tuinix::KeyInput {
+                    code: tuinix::KeyCode::Char(c),
+                    ..
+                }) = input
+                {
+                    self.state.last_input_char = c;
+                }
+                let bindings = self.config.get_bindings(&self.context).or_fail()?;
+                if let Some(binding) = bindings.iter().find(|b| b.matches(input)).cloned() {
+                    self.handle_binding(binding).or_fail()?;
+                    self.render().or_fail()?;
+                }
+                Ok(())
+            }
+            TerminalEvent::FdReady { .. } => Err(orfail::Failure::new("bug")),
         }
+    }
 
+    fn handle_binding(&mut self, binding: Binding<Action>) -> orfail::Result<()> {
+        if let Some(action) = binding.action {
+            self.handle_action(action).or_fail()?;
+        }
+        if let Some(context) = binding.context {
+            self.context = context;
+        }
         Ok(())
     }
 }
@@ -171,12 +209,12 @@ impl Focus {
 #[derive(Debug, Default)]
 pub struct AppState {
     pub grep: GrepOptions,
-    pub dirty: bool,
     pub search_result: SearchResult,
     pub cursor: Cursor,
     pub collapsed: BTreeSet<PathBuf>,
     pub show_terminal_cursor: Option<TerminalPosition>,
     pub focus: Focus,
+    pub last_input_char: char,
 }
 
 impl AppState {
@@ -213,7 +251,6 @@ impl AppState {
 
     pub fn set_focus(&mut self, focus: Focus) {
         self.focus = focus;
-        self.dirty = true;
     }
 
     pub fn flip_grep_flag<F>(&mut self, f: F) -> orfail::Result<()>
@@ -239,7 +276,6 @@ impl AppState {
                 }
             }
         }
-        self.dirty = true;
         self.reset_cursor();
         Ok(())
     }
@@ -255,7 +291,6 @@ impl AppState {
         if !self.collapsed.remove(file) {
             self.collapsed.insert(file.clone());
         }
-        self.dirty = true;
     }
 
     pub fn toggle_all_expansion(&mut self) {
@@ -276,8 +311,6 @@ impl AppState {
         } else {
             self.collapsed.extend(target_files.cloned());
         }
-
-        self.dirty = true;
     }
 
     pub fn cursor_up(&mut self) {
@@ -300,7 +333,6 @@ impl AppState {
     fn cursor_up_file(&mut self) {
         if let Some(new) = self.peek_cursor_up_file().cloned() {
             self.cursor.file = Some(new);
-            self.dirty = true;
         }
     }
 
@@ -329,7 +361,6 @@ impl AppState {
             self.collapsed.remove(&file);
             self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
-            self.dirty = true;
         }
     }
 
@@ -366,7 +397,6 @@ impl AppState {
             self.collapsed.remove(&file);
             self.cursor.file = Some(file);
             self.cursor.line_number = Some(line_number);
-            self.dirty = true;
         }
     }
 
@@ -382,7 +412,6 @@ impl AppState {
     fn cursor_down_file(&mut self) {
         if let Some(new) = self.peek_cursor_down_file().cloned() {
             self.cursor.file = Some(new);
-            self.dirty = true;
         }
     }
 
@@ -403,13 +432,11 @@ impl AppState {
             .number;
         self.cursor.line_number = Some(line_number);
         self.collapsed.remove(file);
-        self.dirty = true;
     }
 
     pub fn cursor_left(&mut self) {
         if self.cursor.is_line_level() {
             self.cursor.line_number = None;
-            self.dirty = true;
         }
     }
 

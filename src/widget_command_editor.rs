@@ -1,7 +1,8 @@
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, TerminalPosition, TerminalStyle};
+use tuinix::{TerminalPosition, TerminalStyle};
 
 use crate::{
+    action::Action,
     app::{AppState, Focus},
     canvas::{Canvas, Token},
     git::GrepArg,
@@ -28,78 +29,59 @@ impl CommandEditorWidget {
         };
         self.original_text = arg.text.clone();
         self.index = arg.len();
-        state.dirty = true;
     }
 
-    pub fn handle_key_input(
-        &mut self,
-        state: &mut AppState,
-        input: KeyInput,
-    ) -> orfail::Result<()> {
-        match (input.ctrl, input.code) {
-            (_, KeyCode::Enter) => {
+    pub fn handle_action(&mut self, state: &mut AppState, action: Action) -> orfail::Result<()> {
+        match action {
+            Action::AcceptInput => {
                 state.regrep().or_fail()?;
                 state.focus = Focus::SearchResult;
-                state.dirty = true;
             }
-            (_, KeyCode::Tab) => {
-                state.regrep().or_fail()?;
-                state.dirty = true;
-            }
-            (true, KeyCode::Char('g')) => {
-                let arg = state.focused_arg_mut().or_fail()?;
-                arg.text = self.original_text.clone();
-                state.regrep().or_fail()?;
-                state.focus = Focus::SearchResult;
-                state.dirty = true;
-            }
-            (false, KeyCode::Char(c))
-                if c.is_alphanumeric() || c.is_ascii_graphic() || c == ' ' =>
-            {
+            Action::InsertChar => {
+                let c = state.last_input_char;
                 state.focused_arg_mut().or_fail()?.insert(self.index, c);
                 self.index += c.len_utf8();
-                state.dirty = true;
             }
-            (false, KeyCode::Backspace) | (true, KeyCode::Char('h')) => {
+            Action::DeleteBackward => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {
                     self.index -= c.len_utf8();
                     arg.remove(self.index).or_fail()?;
-                    state.dirty = true;
                 }
             }
-            (false, KeyCode::Delete) | (true, KeyCode::Char('d')) => {
+            Action::DeleteChar => {
                 let arg = state.focused_arg_mut().or_fail()?;
-                if arg.remove(self.index).is_some() {
-                    state.dirty = true;
-                }
+                arg.remove(self.index);
             }
-            (false, KeyCode::Left) | (true, KeyCode::Char('b')) => {
+            Action::DeleteToEnd => {
+                let arg = state.focused_arg_mut().or_fail()?;
+                arg.text.truncate(self.index);
+            }
+            Action::MoveBackward | Action::CursorLeft => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.prev_char(self.index) {
                     self.index -= c.len_utf8();
-                    state.dirty = true;
                 }
             }
-            (false, KeyCode::Right) | (true, KeyCode::Char('f')) => {
+            Action::MoveForward | Action::CursorRight => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if let Some(c) = arg.next_char(self.index) {
                     self.index += c.len_utf8();
-                    state.dirty = true;
                 }
             }
-            (true, KeyCode::Char('a')) => {
+            Action::MoveToStart => {
                 if self.index > 0 {
                     self.index = 0;
-                    state.dirty = true;
                 }
             }
-            (true, KeyCode::Char('e')) => {
+            Action::MoveToEnd => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if self.index < arg.len() {
-                    self.index = state.grep.pattern.len();
-                    state.dirty = true;
+                    self.index = arg.len();
                 }
+            }
+            Action::SetFocus(focus) => {
+                state.focus = focus;
             }
             _ => {}
         }

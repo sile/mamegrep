@@ -1,10 +1,11 @@
 use std::{num::NonZeroUsize, path::PathBuf};
 
 use orfail::OrFail;
-use tuinix::{KeyCode, KeyInput, TerminalStyle};
+use tuinix::TerminalStyle;
 
 use crate::{
-    app::{AppState, Focus},
+    action::Action,
+    app::AppState,
     canvas::{Canvas, Token},
     git::{ContextLines, Line},
 };
@@ -214,63 +215,42 @@ impl SearchResultWidget {
         canvas.newline();
     }
 
-    pub fn handle_key_input(
-        &mut self,
-        state: &mut AppState,
-        input: KeyInput,
-    ) -> orfail::Result<()> {
-        if input.ctrl {
-            match input.code {
-                KeyCode::Char('p') => state.cursor_up(),
-                KeyCode::Char('n') => state.cursor_down(),
-                KeyCode::Char('f') => state.cursor_right(),
-                KeyCode::Char('b') => state.cursor_left(),
-                _ => {}
-            }
-            return Ok(());
-        }
-
-        match input.code {
-            KeyCode::Char('/' | 'e') => state.set_focus(Focus::Pattern),
-            KeyCode::Char('a') => state.set_focus(Focus::AndPattern),
-            KeyCode::Char('n') => state.set_focus(Focus::NotPattern),
-            KeyCode::Char('r') => state.set_focus(Focus::Revision),
-            KeyCode::Char('p') => state.set_focus(Focus::Path),
-            KeyCode::Char('i') => state.flip_grep_flag(|f| &mut f.ignore_case).or_fail()?,
-            KeyCode::Char('u') => state.flip_grep_flag(|f| &mut f.untracked).or_fail()?,
-            KeyCode::Char('I') => state.flip_grep_flag(|f| &mut f.no_index).or_fail()?,
-            KeyCode::Char('R') => state.flip_grep_flag(|f| &mut f.no_recursive).or_fail()?,
-            KeyCode::Char('w') => state.flip_grep_flag(|f| &mut f.word_regexp).or_fail()?,
-            KeyCode::Char('F') if !(state.grep.perl_regexp || state.grep.extended_regexp) => {
-                state.flip_grep_flag(|f| &mut f.fixed_strings).or_fail()?;
-            }
-            KeyCode::Char('E') if !(state.grep.fixed_strings || state.grep.perl_regexp) => {
+    pub fn handle_action(&mut self, state: &mut AppState, action: Action) -> orfail::Result<()> {
+        match action {
+            Action::CursorUp => state.cursor_up(),
+            Action::CursorDown => state.cursor_down(),
+            Action::CursorRight => state.cursor_right(),
+            Action::CursorLeft => state.cursor_left(),
+            Action::SetFocus(focus) => state.set_focus(focus),
+            Action::ToggleExpansion => state.toggle_expansion(),
+            Action::ToggleAllExpansion => state.toggle_all_expansion(),
+            Action::FlipIgnoreCase => state.flip_grep_flag(|f| &mut f.ignore_case).or_fail()?,
+            Action::FlipUntracked => state.flip_grep_flag(|f| &mut f.untracked).or_fail()?,
+            Action::FlipNoIndex => state.flip_grep_flag(|f| &mut f.no_index).or_fail()?,
+            Action::FlipNoRecursive => state.flip_grep_flag(|f| &mut f.no_recursive).or_fail()?,
+            Action::FlipExtendedRegexp if !(state.grep.fixed_strings || state.grep.perl_regexp) => {
                 state.flip_grep_flag(|f| &mut f.extended_regexp).or_fail()?;
             }
-            KeyCode::Char('P') if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
+            Action::FlipFixedStrings if !(state.grep.perl_regexp || state.grep.extended_regexp) => {
+                state.flip_grep_flag(|f| &mut f.fixed_strings).or_fail()?;
+            }
+            Action::FlipPerlRegexp if !(state.grep.fixed_strings || state.grep.extended_regexp) => {
                 state.flip_grep_flag(|f| &mut f.perl_regexp).or_fail()?;
             }
-            KeyCode::Char('+')
-                if state.cursor.is_line_level() && state.grep.context_lines < ContextLines::MAX =>
-            {
-                state.grep.context_lines.0 += 1;
-                state.regrep().or_fail()?;
+            Action::IncreaseContext if state.cursor.is_line_level() => {
+                if state.grep.context_lines < ContextLines::MAX {
+                    state.grep.context_lines.0 += 1;
+                    state.regrep().or_fail()?;
+                }
             }
-            KeyCode::Char('-')
-                if state.cursor.is_line_level() && state.grep.context_lines > ContextLines::MIN =>
-            {
-                state.grep.context_lines.0 -= 1;
-                state.regrep().or_fail()?;
+            Action::DecreaseContext if state.cursor.is_line_level() => {
+                if state.grep.context_lines > ContextLines::MIN {
+                    state.grep.context_lines.0 -= 1;
+                    state.regrep().or_fail()?;
+                }
             }
-            KeyCode::Up | KeyCode::Char('k') => state.cursor_up(),
-            KeyCode::Down | KeyCode::Char('j') => state.cursor_down(),
-            KeyCode::Right | KeyCode::Char('l') => state.cursor_right(),
-            KeyCode::Left | KeyCode::Char('h') => state.cursor_left(),
-            KeyCode::Char('t') | KeyCode::Tab => {
-                state.toggle_expansion();
-            }
-            KeyCode::Char('T') => {
-                state.toggle_all_expansion();
+            Action::FlipWholeWord => {
+                state.flip_grep_flag(|f| &mut f.word_regexp).or_fail()?;
             }
             _ => {}
         }

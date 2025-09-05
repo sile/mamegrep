@@ -1,0 +1,209 @@
+{
+  "variables": {
+    "MAMEGREP_HIDE_LEGEND": {
+      "type": "env",
+      "default": false,
+    },
+  },
+  "setup": {
+    "context": "@browse",
+    "action": {
+      "type": "init-legend",
+      "hide": {"ref": "MAMEGREP_HIDE_LEGEND"},
+      "labels": {"show": "s(H)ow", "hide": "(H)ide"},
+    },
+  },
+  "bindings": {
+    "@browse": [
+      {"label": "[ACTIONS]"},
+      {
+        "label": " (q)uit     [ESC,C-c]",
+        "triggers": ["q", "<ESCAPE>", "C-c"],
+        "action": {"type": "quit"},
+      },
+      {
+        "triggers": ["H"],
+        "action": {"type": "toggle-legend"},
+      },
+      {"label": ""},
+
+      {
+        "label": " (e)dit pattern   [/]",
+        "triggers": ["/", "e"],
+        "action": {"type": "set-focus", "focus": "pattern"},
+        "context": "@edit",
+      },
+      {
+        "label": " edit (a)nd pattern  ",
+        "triggers": ["a"],
+        "action": {"type": "set-focus", "focus": "and-pattern"},
+        "context": "@edit",
+      },
+      {
+        "label": " edit (n)ot pattern  ",
+        "triggers": ["n"],
+        "action": {"type": "set-focus", "focus": "not-pattern"},
+        "context": "@edit",
+      },
+      {
+        "label": " edit (r)evision     ",
+        "triggers": ["r"],
+        "action": {"type": "set-focus", "focus": "revision"},
+        "context": "@edit",
+      },
+      {
+        "label": " edit (p)ath         ",
+        "triggers": ["p"],
+        "action": {"type": "set-focus", "focus": "path"},
+        "context": "@edit",
+      },
+      {"label": ""},
+
+      {
+        "label": " (t)oggle file  [TAB]",
+        "triggers": ["t", "<TAB>"],
+        "action": {"type": "toggle-expansion"},
+      },
+      {
+        "label": " (T)oggle all files  ",
+        "triggers": ["T"],
+        "action": {"type": "toggle-all-expansion"},
+      },
+      {
+        "label": " (↑)          [k,C-p]",
+        "triggers": ["k", "C-p", "<UP>"],
+        "action": {"type": "cursor-up"},
+      },
+      {
+        "label": " (↓)          [j,C-n]",
+        "triggers": ["j", "C-n", "<DOWN>"],
+        "action": {"type": "cursor-down"},
+      },
+      {
+        "label": " (←)          [h,C-b]",
+        "triggers": ["h", "C-b", "<LEFT>"],
+        "action": {"type": "cursor-left"},
+      },
+      {
+        "label": " (→)          [l,C-f]",
+        "triggers": ["l", "C-f", "<RIGHT>"],
+        "action": {"type": "cursor-right"},
+      },
+      {
+        "label": " (+|-) context lines ",
+        "triggers": ["+"],
+        "action": {"type": "increase-context"},
+      },
+      {
+        "triggers": ["-"],
+        "action": {"type": "decrease-context"},
+      },
+      {"label": ""},
+
+      {"label": "[GIT GREP FLAGS]"},
+      {
+        "label": " --(i)gnore-case",
+        "triggers": ["i"],
+        "action": {"type": "flip-ignore-case"},
+      },
+      {
+        "label": " --(u)ntracked",
+        "triggers": ["u"],
+        "action": {"type": "flip-untracked"},
+      },
+      {
+        "label": " --no-(I)ndex",
+        "triggers": ["I"],
+        "action": {"type": "flip-no-index"},
+      },
+      {
+        "label": " --no-(R)ecursive",
+        "triggers": ["R"],
+        "action": {"type": "flip-no-recursive"},
+      },
+      {
+        "label": " --(w)ord-regexp",
+        "triggers": ["w"],
+        "action": {"type": "flip-whole-word"},
+      },
+      {
+        "label": " --(F)ixed-strings",
+        "triggers": ["F"],
+        "action": {"type": "flip-fixed-strings"},
+      },
+      {
+        "label": " --(E)xtended-regexp",
+        "triggers": ["E"],
+        "action": {"type": "flip-extended-regexp"},
+      },
+      {
+        "label": " --(P)erl-regexp",
+        "triggers": ["P"],
+        "action": {"type": "flip-perl-regexp"},
+      },
+    ],
+    "@edit": [
+      {"label": "[ACTIONS]"},
+      {
+        "label": " quit       [ESC,C-c]",
+        "triggers": ["<ESCAPE>", "C-c"],
+        "action": {"type": "quit"},
+      },
+      {"label": ""},
+
+      {
+        "label": " search       [ENTER]",
+        "triggers": ["<ENTER>"],
+        "action": {"type": "accept-input"},
+        "context": "@browse",
+      },
+      {
+        "label": " cancel         [C-g]",
+        "triggers": ["C-g"],
+        "action": {"type": "set-focus", "focus": "search-result"},
+        "context": "@browse",
+      },
+      {"label": ""},
+
+      {
+        "label": " (BACKSPACE)    [C-h]",
+        "triggers": ["<BACKSPACE>", "C-h"],
+        "action": {"type": "delete-backward"},
+      },
+      {
+        "label": " (DELETE)       [C-d]",
+        "triggers": ["C-d", "<DELETE>"],
+        "action": {"type": "delete-char"},
+      },
+      {
+        "label": " (←)            [C-b]",
+        "triggers": ["<LEFT>", "C-b"],
+        "action": {"type": "move-backward"},
+      },
+      {
+        "label": " (→)            [C-f]",
+        "triggers": ["<RIGHT>", "C-f"],
+        "action": {"type": "move-forward"},
+      },
+      {
+        "label": " go to head     [C-a]",
+        "triggers": ["C-a"],
+        "action": {"type": "move-to-start"},
+      },
+      {
+        "label": " go to tail     [C-e]",
+        "triggers": ["C-e"],
+        "action": {"type": "move-to-end"},
+      },
+      {
+        "label": " delete to end  [C-k]",
+        "triggers": ["C-k"],
+        "action": {"type": "delete-to-end"},
+      },
+      {
+        "triggers": ["<PRINTABLE>"],
+        "action": {"type": "insert-char"},
+      },
+    ],
+  },
+}
