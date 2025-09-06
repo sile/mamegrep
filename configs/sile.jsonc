@@ -70,23 +70,23 @@
         "action": {"type": "toggle-all-expansion"},
       },
       {
-        "label": " (↑)          [k,C-p]",
-        "triggers": ["k", "C-p", "<UP>"],
+        "label": " (↑)          [C-p]",
+        "triggers": ["C-p", "<UP>"],
         "action": {"type": "cursor-up"},
       },
       {
-        "label": " (↓)          [j,C-n]",
-        "triggers": ["j", "C-n", "<DOWN>"],
+        "label": " (↓)          [C-n]",
+        "triggers": ["C-n", "<DOWN>"],
         "action": {"type": "cursor-down"},
       },
       {
-        "label": " (←)          [h,C-b]",
-        "triggers": ["h", "C-b", "<LEFT>"],
+        "label": " (←)          [C-b]",
+        "triggers": ["C-b", "<LEFT>"],
         "action": {"type": "cursor-left"},
       },
       {
-        "label": " (→)          [l,C-f]",
-        "triggers": ["l", "C-f", "<RIGHT>"],
+        "label": " (→)          [C-f]",
+        "triggers": ["C-f", "<RIGHT>"],
         "action": {"type": "cursor-right"},
       },
       {
