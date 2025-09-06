@@ -168,6 +168,8 @@ impl App {
         match event {
             TerminalEvent::Resize(_) => self.render().or_fail(),
             TerminalEvent::Input(input) => {
+                self.preview = None;
+
                 if let tuinix::TerminalInput::Key(tuinix::KeyInput {
                     code: tuinix::KeyCode::Char(c),
                     ..
