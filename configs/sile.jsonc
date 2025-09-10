@@ -9,7 +9,7 @@
     "context": "@browse",
     "action": {
       "type": "init-legend",
-      "hide": {"ref": "MAMEGREP_HIDE_LEGEND"},
+      "hide": {"env!": "MAMEGREP_HIDE_LEGEND", "default": false},
       "labels": {"show": "s(H)ow", "hide": "(H)ide"},
     },
   },

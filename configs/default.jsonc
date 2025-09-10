@@ -1,16 +1,10 @@
 // [NOTE] The configuration file format is experimental and may change in future versions.
 {
-  "variables": {
-    "MAMEGREP_HIDE_LEGEND": {
-      "type": "env",
-      "default": false,
-    },
-  },
   "setup": {
     "context": "@browse",
     "action": {
       "type": "init-legend",
-      "hide": {"ref": "MAMEGREP_HIDE_LEGEND"},
+      "hide": {"env!": "MAMEGREP_HIDE_LEGEND", "default": false},
       "labels": {"show": "s(H)ow", "hide": "(H)ide"},
     },
   },
