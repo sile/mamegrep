@@ -69,11 +69,10 @@ impl CommandEditorWidget {
                     self.index += c.len_utf8();
                 }
             }
-            Action::MoveToStart => {
-                if self.index > 0 {
+            Action::MoveToStart
+                if self.index > 0 => {
                     self.index = 0;
                 }
-            }
             Action::MoveToEnd => {
                 let arg = state.focused_arg_mut().or_fail()?;
                 if self.index < arg.len() {
